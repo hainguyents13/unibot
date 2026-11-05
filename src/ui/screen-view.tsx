@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { X } from "lucide-react";
 import type { BotScreen } from "../hermes/screen";
 
 /**
@@ -87,8 +88,8 @@ export function ScreenView({ screen, botName, onClose }: { screen: BotScreen; bo
               Hand back
             </button>
           )}
-          <button type="button" aria-label="Close the computer" onClick={onClose}>
-            ×
+          <button type="button" className="icon-button" aria-label="Close the computer" onClick={onClose}>
+            <X size={18} aria-hidden />
           </button>
         </div>
       </header>

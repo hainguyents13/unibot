@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Blocks, Bot as BotIcon, LogOut, Server, X } from "lucide-react";
 import { GatewayAddress } from "../hermes/gateway-address";
 import { describeError } from "../hermes/gateway-error";
 import type { Link, Session, SessionState } from "../hermes/session";
 import { AppsSettings } from "./apps-settings";
+import { ComposioSettings } from "./composio-settings";
 import { RecentGateways } from "./connect-view";
 
-export type SettingsPage = { kind: "gateway" } | { kind: "apps"; botId: string };
+export type SettingsPage = { kind: "gateway" } | { kind: "composio" } | { kind: "apps"; botId: string };
 
 interface SettingsDialogProps {
   session: Session;
@@ -29,15 +31,20 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
       <header className="settings-header">
         <h2>Settings</h2>
         <button type="button" className="icon-button" aria-label="Close settings" onClick={() => dialog.current?.close()}>
-          ×
+          <X size={18} aria-hidden />
         </button>
       </header>
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="Settings pages">
           <button type="button" aria-current={page.kind === "gateway" ? "page" : undefined} onClick={() => onPage({ kind: "gateway" })}>
-            Gateway
+            <Server size={16} aria-hidden />
+            <span>Gateway</span>
           </button>
-          <h3 className="settings-nav-section">Apps</h3>
+          <button type="button" aria-current={page.kind === "composio" ? "page" : undefined} onClick={() => onPage({ kind: "composio" })}>
+            <Blocks size={16} aria-hidden />
+            <span>Composio</span>
+          </button>
+          <h3 className="settings-nav-section">Apps of each Bot</h3>
           {state.bots.map((b) => (
             <button
               key={b.id}
@@ -45,13 +52,15 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
               aria-current={page.kind === "apps" && page.botId === b.id ? "page" : undefined}
               onClick={() => onPage({ kind: "apps", botId: b.id })}
             >
-              {b.name}
+              <BotIcon size={16} aria-hidden />
+              <span>{b.name}</span>
             </button>
           ))}
           {state.bots.length === 0 && <p className="hint settings-nav-note">No Bots yet.</p>}
         </nav>
         <section className="settings-page">
           {page.kind === "gateway" && <GatewaySettings session={session} state={state} />}
+          {page.kind === "composio" && <ComposioSettings session={session} bots={state.bots} />}
           {page.kind === "apps" &&
             (bot ? (
               <>
@@ -91,7 +100,8 @@ function GatewaySettings({ session, state }: { session: Session; state: Settings
         <div className="routine-top">
           <span className="routine-name settings-address">{current}</span>
           {!state.demo && (
-            <button type="button" onClick={() => void session.signOut()}>
+            <button type="button" className="with-icon" onClick={() => void session.signOut()}>
+              <LogOut size={15} aria-hidden />
               Sign out
             </button>
           )}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Plus, Settings } from "lucide-react";
 import { notify, onOpenTarget, setAttention } from "../platform/desktop";
 import type { ChatThread } from "../hermes/chat-thread";
 import type { Link, Session, SessionState } from "../hermes/session";
@@ -79,7 +80,7 @@ export function Shell({ session, state }: ShellProps) {
             title="New room"
             onClick={() => setMakingRoom(true)}
           >
-            +
+            <Plus size={16} aria-hidden />
           </button>
         </div>
         <ContactList
@@ -99,7 +100,8 @@ export function Shell({ session, state }: ShellProps) {
           />
         )}
         <footer className="sidebar-footer">
-          <button type="button" onClick={() => setSettings({ kind: "gateway" })}>
+          <button type="button" className="tool-button" onClick={() => setSettings({ kind: "gateway" })}>
+            <Settings size={16} aria-hidden />
             Settings
           </button>
         </footer>

@@ -603,13 +603,45 @@ input:focus-visible {
   gap: 12px;
 }
 
-.chat-header-row > .card-actions {
+.header-tools {
+  display: flex;
   flex: none;
-  flex-wrap: nowrap;
+  gap: 2px;
 }
 
-.chat-header-row button[aria-pressed="true"] {
+/* A quiet button with an icon: the chat header's tools and the sidebar's Settings. */
+.tool-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.tool-button:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
+
+.tool-button[aria-pressed="true"] {
   background: var(--row-selected);
+  color: var(--text);
+}
+
+.with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Narrow windows keep the tools' icons and drop their words. */
+@media (max-width: 720px) {
+  .header-tools .tool-button {
+    font-size: 0;
+    gap: 0;
+  }
 }
 
 .sidebar-section {
@@ -942,16 +974,58 @@ input:focus-visible {
 }
 
 .settings-nav button {
+  display: flex;
   flex: none;
-  overflow: hidden;
+  align-items: center;
+  gap: 8px;
   padding: 7px 10px;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--text);
   text-align: left;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.settings-nav button svg {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.settings-nav button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pick-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  list-style: none;
+}
+
+.pick-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.pick-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.pick-row input {
+  accent-color: var(--accent);
+}
+
+.pick-row-name {
+  flex: 1;
+  font-weight: 600;
 }
 
 .settings-nav button:hover {

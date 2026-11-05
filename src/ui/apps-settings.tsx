@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { ChevronLeft } from "lucide-react";
 import { APP_PRESETS, type AppPreset } from "../hermes/app-presets";
 import type { Connector, ConnectorList } from "../hermes/connectors";
 import { serverLocation, type McpCatalogEntry, type McpServer, type McpServerList } from "../hermes/mcp-servers";
@@ -30,8 +31,9 @@ export function AppsSettings({ apps, botName }: { apps: BotApps; botName: string
   return (
     <div className="apps-settings">
       {screen.kind !== "list" && (
-        <button type="button" className="link-button" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
-          ← {screen.kind === "add" ? `${botName}'s apps` : "Add an app"}
+        <button type="button" className="link-button with-icon" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
+          <ChevronLeft size={15} aria-hidden />
+          {screen.kind === "add" ? `${botName}'s apps` : "Add an app"}
         </button>
       )}
       {servers.notice && (

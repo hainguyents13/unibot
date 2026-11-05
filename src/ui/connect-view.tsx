@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from "react";
+import { X } from "lucide-react";
 import type { Session, SessionState } from "../hermes/session";
 
 interface ConnectViewProps {
@@ -30,7 +31,7 @@ export function RecentGateways({
               {gateway}
             </button>
             <button type="button" className="icon-button" aria-label={`Forget ${gateway}`} title="Forget, and remove its saved sign-in" onClick={() => onForget(gateway)}>
-              ×
+              <X size={16} aria-hidden />
             </button>
           </li>
         ))}

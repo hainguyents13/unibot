@@ -3,6 +3,7 @@ import type { Attachment } from "../hermes/attachments";
 import type { ChatThread } from "../hermes/chat-thread";
 import type { RoutineList } from "../hermes/routines";
 import type { BotScreen } from "../hermes/screen";
+import { CalendarClock, Monitor, Puzzle } from "lucide-react";
 import { ConnectionCard } from "./connection-card";
 import { RoutinesPanel } from "./routines-panel";
 import { ScreenView } from "./screen-view";
@@ -84,16 +85,19 @@ export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewPr
           <h2>{bot.name}</h2>
           {bot.about && <p>{bot.about}</p>}
         </div>
-        <div className="card-actions">
+        <div className="header-tools">
           {hasScreen && (
-            <button type="button" aria-pressed={panel === "computer"} onClick={() => toggle("computer")}>
+            <button type="button" className="tool-button" aria-pressed={panel === "computer"} onClick={() => toggle("computer")}>
+              <Monitor size={15} aria-hidden />
               Computer
             </button>
           )}
-          <button type="button" onClick={openApps}>
+          <button type="button" className="tool-button" onClick={openApps}>
+            <Puzzle size={15} aria-hidden />
             Apps
           </button>
-          <button type="button" aria-pressed={panel === "routines"} onClick={() => toggle("routines")}>
+          <button type="button" className="tool-button" aria-pressed={panel === "routines"} onClick={() => toggle("routines")}>
+            <CalendarClock size={15} aria-hidden />
             Routines
           </button>
         </div>

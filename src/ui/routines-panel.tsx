@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { X } from "lucide-react";
 import { scheduleInWords, type RoutineList } from "../hermes/routines";
 
 const when = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
@@ -15,8 +16,8 @@ export function RoutinesPanel({ list, botName, onClose }: { list: RoutineList; b
     <aside className="side-panel" aria-label={`${botName}'s routines`}>
       <header className="side-panel-header">
         <h2>Routines</h2>
-        <button type="button" aria-label="Close routines" onClick={onClose}>
-          ×
+        <button type="button" className="icon-button" aria-label="Close routines" onClick={onClose}>
+          <X size={18} aria-hidden />
         </button>
       </header>
       {view.phase.kind === "loading" && <p className="card-note">Loading…</p>}

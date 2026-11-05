@@ -61,8 +61,9 @@ Apps live on your gateway, per Bot: Hermes runs them and keeps every token, key 
   sign-in, so a token is the way.
 - **Plane**: Quick setup → Plane, with a personal access token and your workspace slug. The gateway
   runs `uvx plane-mcp-server stdio`, so its computer needs [uv](https://docs.astral.sh/uv/).
-- **Composio**: Quick setup → Composio, with an API key from
-  [Composio's dashboard](https://dashboard.composio.dev). One server gives the Bot hundreds of apps,
+- **Composio**: **Settings** → Composio, paste an API key from
+  [Composio's dashboard](https://dashboard.composio.dev) and tick the Bots that use it (or add it to
+  one Bot from its Quick setup). One server gives the Bot hundreds of apps,
   Gmail and Google Drive, Docs, Sheets, Slides and Calendar among them; the first time it needs one,
   it replies with a sign-in link. The gateway runs `npx mcp-remote` to send the key, so its computer
   needs [Node.js](https://nodejs.org). Composio keeps those sign-ins, and the Bot's calls to those
@@ -102,7 +103,7 @@ on `127.0.0.1:19119` for trying sign-in, chats, rooms and routines without a rea
 
 Unibot speaks the same gateway protocol as [Usual Bot](https://github.com/usual-labs/usual-bot), the
 native Hermes messenger for Mac and iPhone, and follows its design. It uses
-[Tauri](https://tauri.app), [React](https://react.dev), [markdown-it](https://github.com/markdown-it/markdown-it)
+[Tauri](https://tauri.app), [React](https://react.dev), [Lucide](https://lucide.dev) icons (ISC), [markdown-it](https://github.com/markdown-it/markdown-it)
 (MIT) and [noVNC](https://github.com/novnc/noVNC) (MPL-2.0) for the Bot's screen.
 
 ## License

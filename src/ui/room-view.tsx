@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent } from "react";
 import type { RoomThread } from "../hermes/room";
 import type { Bot } from "../hermes/types";
+import { Pencil, Trash2 } from "lucide-react";
 import { DeleteRoomDialog, RenameRoomDialog } from "./room-edit-dialogs";
 import { TranscriptView } from "./transcript-view";
 
@@ -66,11 +67,13 @@ export function RoomView({ room, bots, rename, remove }: RoomViewProps) {
           <h2>{view.name}</h2>
           <p>{view.members.map((m) => memberName(m.id)).join(", ")}</p>
         </div>
-        <div className="card-actions">
-          <button type="button" onClick={() => setEditing("rename")}>
+        <div className="header-tools">
+          <button type="button" className="tool-button" onClick={() => setEditing("rename")}>
+            <Pencil size={15} aria-hidden />
             Rename
           </button>
-          <button type="button" onClick={() => setEditing("delete")}>
+          <button type="button" className="tool-button" onClick={() => setEditing("delete")}>
+            <Trash2 size={15} aria-hidden />
             Delete
           </button>
         </div>
