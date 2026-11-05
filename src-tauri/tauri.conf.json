@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Unibot",
+  "version": "0.1.0",
+  "identifier": "dev.unibot.desktop",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Unibot",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 640,
+        "minHeight": 420,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "Unibot",
+    "copyright": "Unibot is independent: not made by, affiliated with or endorsed by Nous Research.",
+    "shortDescription": "A Windows messenger for your Hermes Bots",
+    "longDescription": "Chat with your Hermes Agent Bots, answer their approvals, follow rooms and routines, and watch their computers, from the Windows tray.",
+    "category": "Productivity",
+    "licenseFile": "../LICENSE",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
+  }
+}

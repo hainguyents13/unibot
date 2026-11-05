@@ -1,0 +1,35 @@
+{
+  "name": "unibot",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@novnc/novnc": "^1.7.0",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-http": "~2.8.3",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-websocket": "~2.5.0",
+    "markdown-it": "^14.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/markdown-it": "^14.2.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.16",
+    "vitest": "^5.1.0"
+  },
+  "license": "Apache-2.0"
+}
