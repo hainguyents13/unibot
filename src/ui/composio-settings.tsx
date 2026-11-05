@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useState, useSyncExternalStore, type FormEvent } from "react";
 import { ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { applyComposio, COMPOSIO, composioServer, type ComposioOutcome } from "../hermes/composio";
 import type { McpServerList } from "../hermes/mcp-servers";
 import type { Session } from "../hermes/session";
 import type { Bot } from "../hermes/types";
+import { Avatar } from "./avatar";
 import { openExternal } from "./open-external";
+import { Consent, Field, Note, PageTitle, Problem, SectionTitle } from "./settings-parts";
 
 /**
  * One Composio key for the Bots you pick. Hermes keeps apps per Bot, so this adds Composio's server
@@ -59,41 +64,30 @@ export function ComposioSettings({ session, bots }: { session: Session; bots: Bo
   }
 
   return (
-    <form className="apps-settings" onSubmit={save}>
-      <h3 className="settings-title">Composio</h3>
-      <p className="card-note">{COMPOSIO.description}</p>
-      <p className="card-note">{COMPOSIO.needs}</p>
-      <p>
-        <button type="button" className="link-button with-icon" onClick={() => void openExternal(COMPOSIO.link.url)}>
-          {COMPOSIO.link.label}
-          <ExternalLink size={13} aria-hidden />
-        </button>
-      </p>
-      <h4 className="panel-section">Bots that use it</h4>
-      {bots.length === 0 && <p className="card-note">No Bots on this gateway yet.</p>}
-      <ul className="pick-list" inert={busy}>
+    <form className="flex flex-col gap-3" onSubmit={save}>
+      <PageTitle>Composio</PageTitle>
+      <Note>{COMPOSIO.description}</Note>
+      <Note>{COMPOSIO.needs}</Note>
+      <Button type="button" variant="link" className="h-auto self-start p-0 text-working" onClick={() => void openExternal(COMPOSIO.link.url)}>
+        {COMPOSIO.link.label}
+        <ExternalLink aria-hidden />
+      </Button>
+      <SectionTitle>Bots that use it</SectionTitle>
+      {bots.length === 0 && <Note>No Bots on this gateway yet.</Note>}
+      <ul className="divide-y rounded-lg border" inert={busy}>
         {rows.map(({ bot, list }) => (
           <ComposioRow key={bot.id} bot={bot} list={list} checked={isChosen(bot, list)} onChange={(value) => setChosen({ ...chosen, [bot.id]: value })} />
         ))}
       </ul>
-      <label className="dialog-field">
-        <span>API key</span>
-        <input type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} disabled={busy} />
-        <span className="hint">Needed only to add Composio to a Bot that doesn't have it. The gateway keeps it; Unibot keeps no copy.</span>
-      </label>
-      {needsConsent && (
-        <label className="consent">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>This gateway uses plain http outside Tailscale, so others on the network could read the key. Send it anyway.</span>
-        </label>
-      )}
+      <Field htmlFor="composio-key" label="API key" help="Needed only to add Composio to a Bot that doesn't have it. The gateway keeps it; Unibot keeps no copy.">
+        <Input id="composio-key" type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} disabled={busy} />
+      </Field>
+      {needsConsent && <Consent checked={consent} onChange={setConsent} what="the key" />}
       {outcome && <OutcomeNote outcome={outcome} />}
-      <div className="card-actions">
-        <button type="submit" className="primary" disabled={!ready || busy}>
-          {busy ? "Saving…" : "Save"}
-        </button>
-      </div>
-      <p className="hint">A Bot's open chat gets Composio when you Apply on that Bot's apps page; new chats get it anyway.</p>
+      <Button type="submit" className="self-start" disabled={!ready || busy}>
+        {busy ? "Saving…" : "Save"}
+      </Button>
+      <Note className="text-xs">A Bot's open chat gets Composio when you Apply on that Bot's apps page; new chats get it anyway.</Note>
     </form>
   );
 }
@@ -104,10 +98,13 @@ function ComposioRow({ bot, list, checked, onChange }: { bot: Bot; list: McpServ
   const has = composioServer(list) !== undefined;
   return (
     <li>
-      <label className="pick-row">
-        <input type="checkbox" checked={checked} disabled={loading || view.phase.kind === "failed"} onChange={(e) => onChange(e.target.checked)} />
-        <span className="pick-row-name">{bot.name}</span>
-        <span className="hint">{loading ? "Checking…" : view.phase.kind === "failed" ? "Couldn't read its apps" : has ? "Has Composio" : ""}</span>
+      <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-accent has-disabled:cursor-default">
+        <Checkbox checked={checked} disabled={loading || view.phase.kind === "failed"} onCheckedChange={(value) => onChange(value === true)} />
+        <Avatar name={bot.name} className="size-7 text-xs" />
+        <span className="flex-1 font-medium">{bot.name}</span>
+        <span className="text-xs text-muted-foreground">
+          {loading ? "Checking…" : view.phase.kind === "failed" ? "Couldn't read its apps" : has ? "Has Composio" : ""}
+        </span>
       </label>
     </li>
   );
@@ -120,15 +117,11 @@ function OutcomeNote({ outcome }: { outcome: ComposioOutcome }) {
   ].filter(Boolean);
   return (
     <>
-      {parts.length > 0 && (
-        <p className="card-note" role="status">
-          {parts.join(" ")}
-        </p>
-      )}
+      {parts.length > 0 && <Note role="status">{parts.join(" ")}</Note>}
       {outcome.failed.map((f) => (
-        <p key={f.name} className="problem" role="alert">
+        <Problem key={f.name}>
           {f.name}: {f.problem}
-        </p>
+        </Problem>
       ))}
     </>
   );

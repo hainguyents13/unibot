@@ -1,4 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { ArrowUp, File, Image, Paperclip, Square, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PromptInput, PromptInputAction, PromptInputActions, PromptInputTextarea } from "@/components/ui/prompt-input";
+import { cn } from "@/lib/utils";
 import { attachmentKind, type Attachment } from "../hermes/attachments";
 import type { ChatThread, ChatView } from "../hermes/chat-thread";
 import { matchingCommands } from "../hermes/commands";
@@ -21,29 +25,24 @@ export function Composer({ thread, view, botName, attachments, onAttach, onRemov
   const [text, setText] = useState("");
   const [highlight, setHighlight] = useState(0);
   const [menuClosed, setMenuClosed] = useState(false);
-  const box = useRef<HTMLTextAreaElement>(null);
+  const boxId = useId();
   const picker = useRef<HTMLInputElement>(null);
   const matches = menuClosed ? [] : matchingCommands(text, view.commands).slice(0, 8);
-
-  // Grows with the text, up to the CSS max-height.
-  useLayoutEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [text]);
+  const focusBox = () => document.getElementById(boxId)?.focus();
 
   // A command such as /retry hands text back to edit.
   useEffect(() => {
     if (view.prefill === undefined) return;
     const prefill = thread.takePrefill();
     if (prefill !== undefined) setText(prefill);
-    box.current?.focus();
+    focusBox();
+    // focusBox reads the box by its ID, which doesn't change.
   }, [view.prefill, thread]);
 
-  async function send(event?: FormEvent) {
-    event?.preventDefault();
-    if (!view.canSend || (!text.trim() && attachments.length === 0)) return;
+  const canSend = view.canSend && !view.isUploading && (text.trim() !== "" || attachments.length > 0);
+
+  async function send() {
+    if (!canSend) return;
     if (attachments.length > 0) {
       // On a failed upload the draft stays, and the chat says which file and why.
       if (await thread.sendWithAttachments(text, attachments)) {
@@ -59,7 +58,7 @@ export function Composer({ thread, view, botName, attachments, onAttach, onRemov
   function pick(name: string) {
     setText(`${name} `);
     setMenuClosed(true);
-    box.current?.focus();
+    focusBox();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -80,7 +79,10 @@ export function Composer({ thread, view, botName, attachments, onAttach, onRemov
         return;
       }
     }
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) void send(event);
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      void send();
+    }
   }
 
   const canAttach = view.canSend && !view.isRunning && !view.isUploading;
@@ -91,70 +93,71 @@ export function Composer({ thread, view, botName, attachments, onAttach, onRemov
       : `Message ${botName}, or type / for skills and commands`;
 
   return (
-    <form className="composer" onSubmit={send}>
+    <div className="relative mx-auto w-full max-w-3xl px-4 pb-4">
       {matches.length > 0 && (
-        <ul className="slash-menu" role="listbox" id="slash-menu" aria-label="Skills and commands">
+        <ul
+          className="absolute right-4 bottom-full left-4 mb-2 max-h-72 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg"
+          role="listbox"
+          id="slash-menu"
+          aria-label="Skills and commands"
+        >
           {matches.map((command, index) => (
             <li
               key={command.name}
               id={`slash-${index}`}
               role="option"
               aria-selected={index === highlight}
+              className="flex cursor-pointer items-baseline gap-2 rounded-lg px-3 py-2 aria-selected:bg-accent"
               onMouseDown={(e) => {
                 e.preventDefault();
                 pick(command.name);
               }}
             >
-              <span className="slash-name">{command.name}</span>
-              {command.kind === "skill" && <span className="slash-kind">Skill</span>}
-              <span className="slash-description">{command.description}</span>
+              <span className="font-mono text-[13px] font-medium">{command.name}</span>
+              {command.kind === "skill" && <span className="rounded bg-muted px-1.5 text-[11px] text-muted-foreground">Skill</span>}
+              <span className="truncate text-[13px] text-muted-foreground">{command.description}</span>
             </li>
           ))}
         </ul>
       )}
-      {attachments.length > 0 && (
-        <ul className="pending" aria-label="Attachments">
-          {attachments.map((attachment, index) => (
-            <li key={`${attachment.name}-${index}`} className="chip">
-              <span className="chip-kind">{attachmentKind(attachment.name) === "image" ? "Image" : "File"}</span>
-              {attachment.name}
-              <button type="button" className="chip-remove" aria-label={`Remove ${attachment.name}`} onClick={() => onRemoveAttachment(index)}>
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="composer-row">
-        <button
-          type="button"
-          className="attach"
-          aria-label="Attach files"
-          title={canAttach ? "Attach files" : "Attach files once the reply has finished"}
-          disabled={!canAttach}
-          onClick={() => picker.current?.click()}
-        >
-          +
-        </button>
-        <input
-          ref={picker}
-          type="file"
-          multiple
-          hidden
-          onChange={(e) => {
-            if (e.target.files) onAttach(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <textarea
-          ref={box}
-          rows={1}
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            setHighlight(0);
-            setMenuClosed(false);
-          }}
+      <PromptInput
+        value={text}
+        onValueChange={(value) => {
+          setText(value);
+          setHighlight(0);
+          setMenuClosed(false);
+        }}
+        maxHeight={200} disabled={!view.canSend} className="rounded-2xl bg-card shadow-sm">
+        {attachments.length > 0 && (
+          <ul className="flex flex-wrap gap-1.5 px-2 pt-1" aria-label="Attachments">
+            {attachments.map((attachment, index) => (
+              <li key={`${attachment.name}-${index}`} className="flex items-center gap-1.5 rounded-md border bg-background py-1 pr-1 pl-2 text-xs">
+                {attachmentKind(attachment.name) === "image" ? (
+                  <Image className="size-3.5 text-muted-foreground" aria-label="Image" />
+                ) : (
+                  <File className="size-3.5 text-muted-foreground" aria-label="File" />
+                )}
+                {attachment.name}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-5"
+                  aria-label={`Remove ${attachment.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveAttachment(index);
+                  }}
+                >
+                  <X className="size-3" aria-hidden />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <PromptInputTextarea
+          id={boxId}
+          className="min-h-10 px-2 text-sm"
           onKeyDown={onKeyDown}
           onPaste={(e) => {
             const files = [...e.clipboardData.files];
@@ -167,17 +170,46 @@ export function Composer({ thread, view, botName, attachments, onAttach, onRemov
           aria-label={`Message ${botName}`}
           aria-controls={matches.length ? "slash-menu" : undefined}
           aria-activedescendant={matches.length ? `slash-${highlight}` : undefined}
-          disabled={!view.canSend}
         />
-        {view.isRunning && (
-          <button type="button" onClick={() => thread.stop()}>
-            Stop
-          </button>
-        )}
-        <button type="submit" className="primary" disabled={!view.canSend || view.isUploading || (!text.trim() && attachments.length === 0)}>
-          {view.isUploading ? "Sending…" : "Send"}
-        </button>
-      </div>
-    </form>
+        <PromptInputActions className="justify-between px-1 pt-1">
+          <PromptInputAction tooltip={canAttach ? "Attach files" : "Attach files once the reply has finished"}>
+            <Button type="button" variant="ghost" size="icon" className="size-8 rounded-full" aria-label="Attach files" disabled={!canAttach} onClick={() => picker.current?.click()}>
+              <Paperclip aria-hidden />
+            </Button>
+          </PromptInputAction>
+          <input
+            ref={picker}
+            type="file"
+            multiple
+            hidden
+            onChange={(e) => {
+              if (e.target.files) onAttach(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <div className="flex items-center gap-1.5">
+            {view.isRunning && (
+              <PromptInputAction tooltip="Stop">
+                <Button type="button" variant="outline" size="icon" className="size-8 rounded-full" aria-label="Stop" onClick={() => thread.stop()}>
+                  <Square className="size-3 fill-current" aria-hidden />
+                </Button>
+              </PromptInputAction>
+            )}
+            <PromptInputAction tooltip={view.isUploading ? "Sending…" : "Send"}>
+              <Button
+                type="button"
+                size="icon"
+                className={cn("size-8 rounded-full", view.isUploading && "animate-pulse")}
+                aria-label={view.isUploading ? "Sending…" : "Send"}
+                disabled={!canSend}
+                onClick={() => void send()}
+              >
+                <ArrowUp aria-hidden />
+              </Button>
+            </PromptInputAction>
+          </div>
+        </PromptInputActions>
+      </PromptInput>
+    </div>
   );
 }

@@ -8,6 +8,10 @@ All notable changes to Unibot are listed here. The format follows
 
 ### Added
 
+- **A new look**, built on shadcn/ui and prompt-kit: a calmer sidebar, message bubbles, a message box
+  with Send, Stop and Attach buttons, a button to jump to the newest message, and dialogs and
+  Settings in one style.
+
 - **Sign in to your Hermes gateway** through its sign-in page in your browser. The sign-in is kept in
   Windows Credential Manager, and Unibot reconnects by itself when the connection drops. Gateways
   you've used are listed on the sign-in screen, and one with a saved sign-in opens without the browser.

@@ -1,15 +1,19 @@
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type DragEvent } from "react";
+import { useEffect, useState, useSyncExternalStore, type DragEvent } from "react";
+import { CalendarClock, Monitor, Puzzle, Upload } from "lucide-react";
+import { ChatContainerContent, ChatContainerRoot } from "@/components/ui/chat-container";
+import { ScrollButton } from "@/components/ui/scroll-button";
 import type { Attachment } from "../hermes/attachments";
 import type { ChatThread } from "../hermes/chat-thread";
 import type { RoutineList } from "../hermes/routines";
 import type { BotScreen } from "../hermes/screen";
-import { CalendarClock, Monitor, Puzzle } from "lucide-react";
+import type { Bot } from "../hermes/types";
+import { ChatHeader, HeaderTool } from "./chat-header";
+import { Composer } from "./composer";
 import { ConnectionCard } from "./connection-card";
+import { RequestCards } from "./request-cards";
 import { RoutinesPanel } from "./routines-panel";
 import { ScreenView } from "./screen-view";
-import type { Bot } from "../hermes/types";
-import { Composer } from "./composer";
-import { RequestCards } from "./request-cards";
+import { Note, Problem } from "./settings-parts";
 import { TranscriptView } from "./transcript-view";
 
 interface ChatViewProps {
@@ -29,27 +33,14 @@ export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewPr
   const hasScreen = !!screenView.status?.supported && !!screenView.status.installed;
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [panel, setPanel] = useState<Panel>();
+  const [dragging, setDragging] = useState(false);
   const toggle = (next: Panel) => setPanel(panel === next ? undefined : next);
+  const canAttach = view.canSend && !view.isRunning && !view.isUploading;
 
   // Whether the Bot has a computer to show; asked again when the chat reconnects.
   useEffect(() => {
     void screen.refresh();
   }, [screen, view.canSend]);
-  const [dragging, setDragging] = useState(false);
-  const scroller = useRef<HTMLDivElement>(null);
-  const pinned = useRef(true);
-  const canAttach = view.canSend && !view.isRunning && !view.isUploading;
-
-  // Follows the newest message while you're at the bottom, and leaves you be when you scrolled up.
-  useLayoutEffect(() => {
-    const el = scroller.current;
-    if (el && pinned.current) el.scrollTop = el.scrollHeight;
-  }, [view]);
-
-  function onScroll() {
-    const el = scroller.current;
-    if (el) pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-  }
 
   async function attach(files: FileList | File[]) {
     const read = await Promise.all(
@@ -69,7 +60,7 @@ export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewPr
 
   return (
     <div
-      className={`chat-body${dragging ? " dragging" : ""}`}
+      className="relative flex min-h-0 flex-1 flex-col"
       onDragOver={(e) => {
         if (!canAttach || !e.dataTransfer.types.includes("Files")) return;
         e.preventDefault();
@@ -80,56 +71,46 @@ export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewPr
       }}
       onDrop={onDrop}
     >
-      <header className="chat-header chat-header-row">
-        <div>
-          <h2>{bot.name}</h2>
-          {bot.about && <p>{bot.about}</p>}
-        </div>
-        <div className="header-tools">
-          {hasScreen && (
-            <button type="button" className="tool-button" aria-pressed={panel === "computer"} onClick={() => toggle("computer")}>
-              <Monitor size={15} aria-hidden />
-              Computer
-            </button>
-          )}
-          <button type="button" className="tool-button" onClick={openApps}>
-            <Puzzle size={15} aria-hidden />
-            Apps
-          </button>
-          <button type="button" className="tool-button" aria-pressed={panel === "routines"} onClick={() => toggle("routines")}>
-            <CalendarClock size={15} aria-hidden />
-            Routines
-          </button>
-        </div>
-      </header>
-      <div className="chat-main">
-      {panel === "routines" && <RoutinesPanel list={routines} botName={bot.name} onClose={() => setPanel(undefined)} />}
-      {panel === "computer" && <ScreenView screen={screen} botName={bot.name} onClose={() => setPanel(undefined)} />}
-      <div className="chat-scroll" ref={scroller} onScroll={onScroll}>
-        {view.banner && <p className="notice">{view.banner}</p>}
-        {view.phase.kind === "loading" && (
-          <p className="empty" role="status">
-            Opening the chat…
-          </p>
-        )}
-        {view.phase.kind === "failed" && (
-          <p className="problem chat-problem" role="alert">
-            {view.phase.message}
-          </p>
-        )}
-        {view.phase.kind === "ready" && view.items.length === 0 && !view.isRunning && (
-          <p className="empty">No messages yet. Say hello to {bot.name}.</p>
-        )}
-        <TranscriptView items={view.items} draft={view.draft} isRunning={view.isRunning} />
-        <RequestCards thread={thread} requests={view.requests} />
-        {view.connection && (
-          <div className="requests">
-            <ConnectionCard thread={thread} card={view.connection} botName={bot.name} online={view.canSend} openApps={openApps} />
+      <ChatHeader title={bot.name} subtitle={bot.about}>
+        {hasScreen && <HeaderTool icon={<Monitor />} label="Computer" pressed={panel === "computer"} onClick={() => toggle("computer")} />}
+        <HeaderTool icon={<Puzzle />} label="Apps" onClick={openApps} />
+        <HeaderTool icon={<CalendarClock />} label="Routines" pressed={panel === "routines"} onClick={() => toggle("routines")} />
+      </ChatHeader>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {panel === "routines" && <RoutinesPanel list={routines} botName={bot.name} onClose={() => setPanel(undefined)} />}
+        {panel === "computer" && <ScreenView screen={screen} botName={bot.name} onClose={() => setPanel(undefined)} />}
+        {/* Follows the newest message while you're at the bottom, and leaves you be when you scrolled up. */}
+        <ChatContainerRoot className={dragging ? "min-h-0 flex-1 opacity-40" : "min-h-0 flex-1"}>
+          <ChatContainerContent className="gap-4 px-5 py-5">
+            {view.banner && <Note className="mx-auto max-w-3xl rounded-md bg-muted px-3 py-2">{view.banner}</Note>}
+            {view.phase.kind === "loading" && (
+              <Note className="m-auto" role="status">
+                Opening the chat…
+              </Note>
+            )}
+            {view.phase.kind === "failed" && <Problem className="mx-auto max-w-3xl">{view.phase.message}</Problem>}
+            {view.phase.kind === "ready" && view.items.length === 0 && !view.isRunning && (
+              <Note className="m-auto">No messages yet. Say hello to {bot.name}.</Note>
+            )}
+            <TranscriptView items={view.items} draft={view.draft} isRunning={view.isRunning} />
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
+              <RequestCards thread={thread} requests={view.requests} />
+              {view.connection && <ConnectionCard thread={thread} card={view.connection} botName={bot.name} online={view.canSend} openApps={openApps} />}
+            </div>
+          </ChatContainerContent>
+          <div className="absolute right-5 bottom-3">
+            <ScrollButton className="shadow-sm" />
           </div>
-        )}
+        </ChatContainerRoot>
       </div>
-      </div>
-      {dragging && <div className="drop-hint">Drop files to send them to {bot.name}</div>}
+      {dragging && (
+        <div className="pointer-events-none absolute inset-x-5 top-20 bottom-28 grid place-items-center rounded-xl border-2 border-dashed border-ring bg-background/70 text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <Upload className="size-4" aria-hidden />
+            Drop files to send them to {bot.name}
+          </span>
+        </div>
+      )}
       <Composer
         key={bot.id}
         thread={thread}

@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { ROOM_SEATS, seatsNote, suggestedRoomName } from "../hermes/room";
 import type { Bot } from "../hermes/types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar } from "./avatar";
 import { ModalDialog } from "./modal-dialog";
 
 interface NewRoomDialogProps {
@@ -35,37 +39,28 @@ export function NewRoomDialog({ bots, create, onCreated, onClose }: NewRoomDialo
       failure="The room wasn't made."
       onClose={onClose}
     >
-      <label className="dialog-field">
-        <span>Name</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={suggestion || "Room name"} />
-      </label>
-      <span id="pick-bots-label" className="pick-bots-label">
-        Bots
-      </span>
+      <div className="grid gap-2">
+        <Label htmlFor="new-room-name">Name</Label>
+        <Input id="new-room-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={suggestion || "Room name"} />
+      </div>
+      <Label id="pick-bots-label">Bots</Label>
       {/* Not a fieldset: a fieldset won't shrink and scroll inside the dialog. */}
-      <div className="pick-bots" role="group" aria-labelledby="pick-bots-label">
+      <div className="min-h-18 shrink overflow-y-auto rounded-md border" role="group" aria-labelledby="pick-bots-label">
         {bots.map((bot) => {
           const isPicked = picked.includes(bot.id);
           return (
-            <label key={bot.id} className="pick-bot">
-              <span className="avatar" aria-hidden="true">
-                {bot.name.slice(0, 1)}
-              </span>
-              <span className="pick-bot-name">{bot.name}</span>
-              <input
-                type="checkbox"
-                checked={isPicked}
-                disabled={!isPicked && picked.length >= ROOM_SEATS.max}
-                onChange={() => toggle(bot.id)}
-              />
+            <label key={bot.id} className="flex cursor-pointer items-center gap-3 border-b px-3 py-2 last:border-b-0 hover:bg-accent has-disabled:cursor-default has-disabled:opacity-50">
+              <Avatar name={bot.name} />
+              <span className="flex-1 font-medium">{bot.name}</span>
+              <Checkbox checked={isPicked} disabled={!isPicked && picked.length >= ROOM_SEATS.max} onCheckedChange={() => toggle(bot.id)} />
             </label>
           );
         })}
       </div>
-      <p className="hint">
+      <p className="text-xs text-muted-foreground">
         {note && (
           <>
-            <strong>{note}</strong>{" "}
+            <strong className="text-foreground">{note}</strong>{" "}
           </>
         )}
         A message without an @mention goes to all of them.

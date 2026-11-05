@@ -30,7 +30,9 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
   `fake-gateway.ts` are the demo's data.
 - `src/platform/`: the Tauri side of the client's interfaces (HTTP, WebSocket, Credential Manager,
   loopback). Loaded only inside the app, so the browser preview never imports Tauri plugins.
-- `src/ui/`: React screens.
+- `src/ui/`: React screens, styled with Tailwind. `src/components/ui/` is shadcn/ui and prompt-kit
+  (chat container, message, prompt input, loader) as their CLI wrote them, with Unibot's few edits
+  marked; the theme is `src/index.css`.
 - `src-tauri/`: Rust, only for what the webview can't do: Credential Manager (`token_store.rs`), the
   sign-in loopback listener (`loopback.rs`), and the tray, close-to-tray, attention dot, start with
   Windows and notifications (`desktop.rs`).
@@ -84,6 +86,11 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
   folder). A development build's page is `localhost:1420` and the installed app's is
   `tauri.localhost`, so the webview's storage isn't shared between them; Credential Manager and the
   file are.
+- **Check what `shadcn add` writes.** It has imported `cn` from an unrelated npm package named
+  `cn` (and installed it) instead of `@/lib/utils`, and added `@custom-variant dark` to
+  `src/index.css`, which makes dark mode follow a `.dark` class instead of Windows's setting. Undo
+  both after each run. prompt-kit's Markdown and Tool aren't used: replies render with markdown-it,
+  and tool calls fold into one line.
 - **Only the refresh token is saved.** Credential Manager caps a credential at 2,560 bytes; a
   restored sign-in refreshes before its first request.
 

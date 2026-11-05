@@ -1,6 +1,10 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { X } from "lucide-react";
+import { Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { scheduleInWords, type RoutineList } from "../hermes/routines";
+import { Note, Panel, Problem } from "./settings-parts";
+import { SidePanel } from "./side-panel";
 
 const when = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
 
@@ -13,62 +17,49 @@ export function RoutinesPanel({ list, botName, onClose }: { list: RoutineList; b
   }, [list]);
 
   return (
-    <aside className="side-panel" aria-label={`${botName}'s routines`}>
-      <header className="side-panel-header">
-        <h2>Routines</h2>
-        <button type="button" className="icon-button" aria-label="Close routines" onClick={onClose}>
-          <X size={18} aria-hidden />
-        </button>
-      </header>
-      {view.phase.kind === "loading" && <p className="card-note">Loading…</p>}
-      {view.phase.kind === "failed" && (
-        <p className="problem" role="alert">
-          {view.phase.message}
-        </p>
-      )}
-      {view.problem && (
-        <p className="problem" role="alert">
-          {view.problem}
-        </p>
-      )}
+    <SidePanel title="Routines" label={`${botName}'s routines`} onClose={onClose}>
+      {view.phase.kind === "loading" && <Note>Loading…</Note>}
+      {view.phase.kind === "failed" && <Problem>{view.phase.message}</Problem>}
+      {view.problem && <Problem>{view.problem}</Problem>}
       {view.phase.kind === "ready" && view.routines.length === 0 && (
-        <p className="card-note">{botName} has no routines. Set them up in the Hermes app or ask {botName} in the chat.</p>
+        <Note>
+          {botName} has no routines. Set them up in the Hermes app or ask {botName} in the chat.
+        </Note>
       )}
-      <ul className="routines">
+      <ul className="flex flex-col gap-2">
         {view.routines.map((routine) => {
           const running = view.running.includes(routine.id);
           const outcome = view.outcomes[routine.id];
           return (
-            <li key={routine.id} className="routine">
-              <div className="routine-top">
-                <span className="routine-name">{routine.name}</span>
-                <label className="switch">
-                  <input
-                    type="checkbox"
+            <li key={routine.id}>
+              <Panel>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold">{routine.name}</span>
+                  <Switch
                     checked={routine.isOn}
                     disabled={routine.isFinished}
-                    onChange={(e) => void list.setOn(routine, e.target.checked)}
+                    onCheckedChange={(checked) => void list.setOn(routine, checked)}
                     aria-label={`${routine.isOn ? "Pause" : "Turn on"} ${routine.name}`}
                   />
-                  <span aria-hidden="true" />
-                </label>
-              </div>
-              <p className="card-note">
-                {routine.isFinished ? "Finished" : scheduleInWords(routine.schedule)}
-                {routine.isOn && routine.nextRun && !routine.isFinished ? ` · next ${when.format(routine.nextRun)}` : ""}
-                {!routine.isOn && !routine.isFinished ? " · paused" : ""}
-              </p>
-              {routine.lastRunFailed && <p className="routine-failed">Last run failed{routine.lastError ? `: ${routine.lastError}` : "."}</p>}
-              <div className="card-actions">
-                <button type="button" disabled={running} onClick={() => void list.runNow(routine)}>
-                  {running ? "Running…" : "Run now"}
-                </button>
-                {outcome && <span className={outcome.succeeded ? "card-note" : "routine-failed"}>{outcome.message}</span>}
-              </div>
+                </div>
+                <Note>
+                  {routine.isFinished ? "Finished" : scheduleInWords(routine.schedule)}
+                  {routine.isOn && routine.nextRun && !routine.isFinished ? ` · next ${when.format(routine.nextRun)}` : ""}
+                  {!routine.isOn && !routine.isFinished ? " · paused" : ""}
+                </Note>
+                {routine.lastRunFailed && <Problem>Last run failed{routine.lastError ? `: ${routine.lastError}` : "."}</Problem>}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" disabled={running} onClick={() => void list.runNow(routine)}>
+                    <Play aria-hidden />
+                    {running ? "Running…" : "Run now"}
+                  </Button>
+                  {outcome && (outcome.succeeded ? <Note>{outcome.message}</Note> : <Problem>{outcome.message}</Problem>)}
+                </div>
+              </Panel>
             </li>
           );
         })}
       </ul>
-    </aside>
+    </SidePanel>
   );
 }

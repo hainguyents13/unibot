@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Blocks, Bot as BotIcon, LogOut, Server, X } from "lucide-react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Blocks, Bot as BotIcon, LogOut, Server } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { GatewayAddress } from "../hermes/gateway-address";
 import { describeError } from "../hermes/gateway-error";
 import type { Link, Session, SessionState } from "../hermes/session";
 import { AppsSettings } from "./apps-settings";
 import { ComposioSettings } from "./composio-settings";
 import { RecentGateways } from "./connect-view";
+import { Note, PageTitle, Panel, Problem, SectionTitle } from "./settings-parts";
 
 export type SettingsPage = { kind: "gateway" } | { kind: "composio" } | { kind: "apps"; botId: string };
 
@@ -17,63 +22,67 @@ interface SettingsDialogProps {
   onClose: () => void;
 }
 
-/** Settings: the gateway you're signed in to, and each Bot's apps, with a page list on the left. */
+/** Settings: the gateway, Composio and each Bot's apps, with a page list on the left. */
 export function SettingsDialog({ session, state, page, onPage, onClose }: SettingsDialogProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const bot = page.kind === "apps" ? state.bots.find((b) => b.id === page.botId) : undefined;
 
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
-
   return (
-    <dialog ref={dialog} className="dialog settings" aria-label="Settings" onClose={onClose}>
-      <header className="settings-header">
-        <h2>Settings</h2>
-        <button type="button" className="icon-button" aria-label="Close settings" onClick={() => dialog.current?.close()}>
-          <X size={18} aria-hidden />
-        </button>
-      </header>
-      <div className="settings-layout">
-        <nav className="settings-nav" aria-label="Settings pages">
-          <button type="button" aria-current={page.kind === "gateway" ? "page" : undefined} onClick={() => onPage({ kind: "gateway" })}>
-            <Server size={16} aria-hidden />
-            <span>Gateway</span>
-          </button>
-          <button type="button" aria-current={page.kind === "composio" ? "page" : undefined} onClick={() => onPage({ kind: "composio" })}>
-            <Blocks size={16} aria-hidden />
-            <span>Composio</span>
-          </button>
-          <h3 className="settings-nav-section">Apps of each Bot</h3>
-          {state.bots.map((b) => (
-            <button
-              key={b.id}
-              type="button"
-              aria-current={page.kind === "apps" && page.botId === b.id ? "page" : undefined}
-              onClick={() => onPage({ kind: "apps", botId: b.id })}
-            >
-              <BotIcon size={16} aria-hidden />
-              <span>{b.name}</span>
-            </button>
-          ))}
-          {state.bots.length === 0 && <p className="hint settings-nav-note">No Bots yet.</p>}
-        </nav>
-        <section className="settings-page">
-          {page.kind === "gateway" && <GatewaySettings session={session} state={state} />}
-          {page.kind === "composio" && <ComposioSettings session={session} bots={state.bots} />}
-          {page.kind === "apps" &&
-            (bot ? (
-              <>
-                <h3 className="settings-title">{bot.name}'s apps</h3>
-                <p className="card-note">Each Bot has its own apps, kept on the gateway with their keys and sign-ins.</p>
-                <AppsSettings key={bot.id} apps={session.apps(bot.id)} botName={bot.name} />
-              </>
-            ) : (
-              <p className="card-note">That Bot isn't on this gateway any more.</p>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex h-[min(640px,calc(100vh-3rem))] w-[min(880px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-none">
+        <header className="flex items-center border-b px-5 py-3.5">
+          <DialogTitle className="text-base">Settings</DialogTitle>
+          <DialogDescription className="sr-only">The gateway, Composio, and each Bot's apps.</DialogDescription>
+        </header>
+        <div className="flex min-h-0 flex-1 max-sm:flex-col">
+          <nav
+            className="flex w-52 shrink-0 flex-col gap-0.5 overflow-y-auto border-r bg-sidebar p-2 max-sm:w-auto max-sm:flex-row max-sm:items-center max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b"
+            aria-label="Settings pages"
+          >
+            <NavItem icon={<Server />} current={page.kind === "gateway"} onClick={() => onPage({ kind: "gateway" })}>
+              Gateway
+            </NavItem>
+            <NavItem icon={<Blocks />} current={page.kind === "composio"} onClick={() => onPage({ kind: "composio" })}>
+              Composio
+            </NavItem>
+            <SectionTitle className="mx-2.5 mt-4 mb-1 max-sm:my-0">Apps of each Bot</SectionTitle>
+            {state.bots.map((b) => (
+              <NavItem key={b.id} icon={<BotIcon />} current={page.kind === "apps" && page.botId === b.id} onClick={() => onPage({ kind: "apps", botId: b.id })}>
+                {b.name}
+              </NavItem>
             ))}
-        </section>
-      </div>
-    </dialog>
+            {state.bots.length === 0 && <Note className="mx-2.5">No Bots yet.</Note>}
+          </nav>
+          <section className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5 max-sm:px-4">
+            {page.kind === "gateway" && <GatewaySettings session={session} state={state} />}
+            {page.kind === "composio" && <ComposioSettings session={session} bots={state.bots} />}
+            {page.kind === "apps" &&
+              (bot ? (
+                <>
+                  <PageTitle>{bot.name}'s apps</PageTitle>
+                  <Note>Each Bot has its own apps, kept on the gateway with their keys and sign-ins.</Note>
+                  <AppsSettings key={bot.id} apps={session.apps(bot.id)} botName={bot.name} />
+                </>
+              ) : (
+                <Note>That Bot isn't on this gateway any more.</Note>
+              ))}
+          </section>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function NavItem({ icon, current, onClick, children }: { icon: ReactNode; current: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-current={current ? "page" : undefined}
+      onClick={onClick}
+      className="flex shrink-0 items-center gap-2.5 rounded-md border-0 bg-transparent px-2.5 py-1.5 text-left whitespace-nowrap transition-colors hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-semibold [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground"
+    >
+      {icon}
+      <span className="truncate">{children}</span>
+    </button>
   );
 }
 
@@ -95,32 +104,32 @@ function GatewaySettings({ session, state }: { session: Session; state: Settings
 
   return (
     <>
-      <h3 className="settings-title">Gateway</h3>
-      <div className="routine">
-        <div className="routine-top">
-          <span className="routine-name settings-address">{current}</span>
+      <PageTitle>Gateway</PageTitle>
+      <Panel>
+        <div className="flex items-center justify-between gap-3">
+          <span className="min-w-0 font-semibold break-all">{current}</span>
           {!state.demo && (
-            <button type="button" className="with-icon" onClick={() => void session.signOut()}>
-              <LogOut size={15} aria-hidden />
+            <Button type="button" variant="outline" size="sm" onClick={() => void session.signOut()}>
+              <LogOut aria-hidden />
               Sign out
-            </button>
+            </Button>
           )}
         </div>
-        <p className="card-note">{state.demo ? "The demo: a made-up gateway, and nothing connects." : linkText(state.link)}</p>
-      </div>
+        <Note>{state.demo ? "The demo: a made-up gateway, and nothing connects." : linkText(state.link)}</Note>
+      </Panel>
       {!state.demo && (
         <>
-          <p className="hint">Signing out removes this gateway's saved sign-in from this computer. Switching to another gateway keeps it.</p>
+          <Note className="text-xs">Signing out removes this gateway's saved sign-in from this computer. Switching to another gateway keeps it.</Note>
           <RecentGateways
             title="Switch to"
             gateways={others}
             onOpen={(gateway) => void session.switchGateway(gateway)}
             onForget={(gateway) => void session.forgetGateway(gateway)}
           />
-          <form className="settings-gateway-form" onSubmit={switchTo}>
-            <label htmlFor="other-gateway">Another gateway</label>
-            <div className="settings-gateway-row">
-              <input
+          <form className="mt-2 grid gap-2" onSubmit={switchTo}>
+            <Label htmlFor="other-gateway">Another gateway</Label>
+            <div className="flex gap-2">
+              <Input
                 id="other-gateway"
                 value={address}
                 onChange={(e) => {
@@ -131,16 +140,12 @@ function GatewaySettings({ session, state }: { session: Session; state: Settings
                 autoComplete="off"
                 spellCheck={false}
               />
-              <button type="submit" disabled={!address.trim()}>
+              <Button type="submit" variant="outline" disabled={!address.trim()}>
                 Switch
-              </button>
+              </Button>
             </div>
-            {problem && (
-              <p className="problem" role="alert">
-                {problem}
-              </p>
-            )}
-            <p className="hint">A gateway you haven't used here signs in on its page in your browser.</p>
+            {problem && <Problem>{problem}</Problem>}
+            <Note className="text-xs">A gateway you haven't used here signs in on its page in your browser.</Note>
           </form>
         </>
       )}

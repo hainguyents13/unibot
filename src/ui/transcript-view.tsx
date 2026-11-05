@@ -1,4 +1,9 @@
 import { memo } from "react";
+import { ChevronRight, File, Image, Loader2, Wrench } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DotsLoader } from "@/components/ui/loader";
+import { Message, MessageContent } from "@/components/ui/message";
+import { cn } from "@/lib/utils";
 import { refName, splitAttachments } from "../hermes/attachments";
 import type { ToolStep, TranscriptItem } from "../hermes/transcript";
 import { Markdown } from "./markdown";
@@ -13,29 +18,24 @@ interface TranscriptViewProps {
 
 export function TranscriptView({ items, draft, isRunning, memberName }: TranscriptViewProps) {
   return (
-    <ol className="transcript" aria-label="Messages">
+    <ol className="mx-auto flex w-full max-w-3xl flex-col gap-4" aria-label="Messages">
       {items.map((item) =>
         item.content.kind === "member" ? (
-          <li key={item.id} className="message assistant member">
-            <span className="member-name">{memberName?.(item.content.memberId) ?? item.content.memberId}</span>
-            <Markdown text={item.content.text} />
+          <li key={item.id}>
+            <BotMessage name={memberName?.(item.content.memberId) ?? item.content.memberId} text={item.content.text} />
           </li>
         ) : (
           <Item key={item.id} item={item} />
         ),
       )}
       {draft && (
-        <li className="message assistant" aria-live="polite">
-          <Markdown text={draft} />
+        <li aria-live="polite">
+          <BotMessage text={draft} />
         </li>
       )}
       {isRunning && !draft && (
-        <li className="working" role="status">
-          <span className="dots" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
+        <li className="flex items-center gap-2.5 text-[13px] text-muted-foreground" role="status">
+          <DotsLoader size="sm" />
           Working…
         </li>
       )}
@@ -48,59 +48,87 @@ const Item = memo(function Item({ item }: { item: TranscriptItem }) {
   const { content } = item;
   switch (content.kind) {
     case "user":
-      return <UserMessage text={content.text} />;
+      return (
+        <li>
+          <UserMessage text={content.text} />
+        </li>
+      );
     case "output":
       return (
-        <li className="message assistant">
-          <pre className="output">{content.text}</pre>
+        <li>
+          <pre className="overflow-x-auto rounded-lg border bg-muted p-3 font-mono text-xs whitespace-pre-wrap">{content.text}</pre>
         </li>
       );
     case "assistant":
       return (
-        <li className="message assistant">
-          <Markdown text={content.text} />
+        <li>
+          <BotMessage text={content.text} />
         </li>
       );
     case "activity":
       return (
-        <li className="activity">
+        <li>
           <ActivityLine steps={content.steps} />
         </li>
       );
     case "notice":
-      return <li className="notice">{content.text}</li>;
+      return <li className="text-center text-xs text-muted-foreground">{content.text}</li>;
     case "member":
       // Rendered by the list, which knows the members' names.
       return null;
     case "result":
       return (
-        <li className="activity">
-          <details>
-            <summary>{content.title}</summary>
-            {content.detail && <pre>{content.detail}</pre>}
-          </details>
+        <li>
+          <Folded summary={content.title}>{content.detail && <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">{content.detail}</pre>}</Folded>
         </li>
       );
   }
 });
 
+function BotMessage({ text, name }: { text: string; name?: string }) {
+  return (
+    <Message className="flex-col gap-1">
+      {name && <span className="text-xs font-semibold text-muted-foreground">{name}</span>}
+      <MessageContent className="bg-transparent p-0">
+        <Markdown text={text} />
+      </MessageContent>
+    </Message>
+  );
+}
+
 /** Your message, with what you sent along shown by name rather than as `@file:` lines. */
 function UserMessage({ text }: { text: string }) {
   const { text: body, attachments } = splitAttachments(text);
   return (
-    <li className="message user">
-      {body}
+    <Message className="flex-col items-end gap-1.5">
+      {body && (
+        <MessageContent className="max-w-[80%] rounded-2xl rounded-br-md bg-secondary px-3.5 py-2 text-sm whitespace-pre-wrap">{body}</MessageContent>
+      )}
       {attachments.length > 0 && (
-        <ul className="sent-attachments" aria-label="Attachments">
+        <ul className="flex flex-wrap justify-end gap-1.5" aria-label="Attachments">
           {attachments.map((ref) => (
-            <li key={ref.path} className="chip" title={ref.path}>
-              <span className="chip-kind">{ref.kind === "image" ? "Image" : "File"}</span>
+            <li key={ref.path} className="flex items-center gap-1.5 rounded-md border bg-card px-2 py-1 text-xs" title={ref.path}>
+              {ref.kind === "image" ? <Image className="size-3.5 text-muted-foreground" aria-label="Image" /> : <File className="size-3.5 text-muted-foreground" aria-label="File" />}
               {refName(ref)}
             </li>
           ))}
         </ul>
       )}
-    </li>
+    </Message>
+  );
+}
+
+/** A one-line summary that opens to show more. */
+function Folded({ summary, running, children }: { summary: string; running?: boolean; children: React.ReactNode }) {
+  return (
+    <Collapsible>
+      <CollapsibleTrigger className="group flex items-center gap-1.5 border-0 bg-transparent p-0 text-[13px] text-muted-foreground hover:text-foreground">
+        {running ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Wrench className="size-3.5" aria-hidden />}
+        <span className={cn(running && "animate-pulse")}>{summary}</span>
+        <ChevronRight className="size-3.5 transition-transform group-data-[state=open]:rotate-90" aria-hidden />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-1.5 ml-5 border-l pl-3">{children}</CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -112,19 +140,18 @@ function ActivityLine({ steps }: { steps: ToolStep[] }) {
     ? `${toolLabel(running)}${running.progress ? ` · ${running.progress}` : ""}…`
     : `Used ${steps.length === 1 ? toolLabel(steps[0]) : `${steps.length} tools`}${failed ? ` · ${failed} failed` : ""}`;
   return (
-    <details>
-      <summary className={running ? "running" : undefined}>{summary}</summary>
-      <ul className="steps">
+    <Folded summary={summary} running={!!running}>
+      <ul className="flex flex-col gap-1 text-[13px]">
         {steps.map((step) => (
-          <li key={step.id} className={`step step-${step.state}`}>
-            <span className="step-name">{step.name}</span>
-            {step.context && <code>{step.context}</code>}
-            {step.summary && <span className="step-summary">{step.summary}</span>}
-            {step.durationSeconds !== undefined && <span className="step-time">{formatSeconds(step.durationSeconds)}</span>}
+          <li key={step.id} className={cn("flex flex-wrap items-baseline gap-x-2", step.state === "failed" && "text-destructive")}>
+            <span className="font-medium">{step.name}</span>
+            {step.context && <code className="rounded bg-muted px-1 text-xs">{step.context}</code>}
+            {step.summary && <span className="text-muted-foreground">{step.summary}</span>}
+            {step.durationSeconds !== undefined && <span className="text-xs text-muted-foreground">{formatSeconds(step.durationSeconds)}</span>}
           </li>
         ))}
       </ul>
-    </details>
+    </Folded>
   );
 }
 

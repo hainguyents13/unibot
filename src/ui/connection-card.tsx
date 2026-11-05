@@ -1,6 +1,9 @@
+import { Button } from "@/components/ui/button";
 import type { ChatThread, ConnectionCard as Card } from "../hermes/chat-thread";
 import { offerFor, openTargets, type ConnectionTarget } from "../hermes/connection-request";
 import { openExternal } from "./open-external";
+import { RequestCard } from "./request-cards";
+import { Note, Problem } from "./settings-parts";
 
 /**
  * The Bot asked to connect apps and waits. Each app says what can be done about it here; whether it
@@ -10,41 +13,37 @@ export function ConnectionCard({ thread, card, botName, online, openApps }: { th
   const { request } = card;
   if (request.suggested) {
     return (
-      <section className="card" aria-label="Connect apps">
-        <h3>{botName} wants you to connect apps</h3>
-        {request.suggested.length > 0 && <p className="card-note">It suggests {request.suggested.join(", ")}.</p>}
-        <p className="card-note">Connect them under Apps, then press Done so {botName} goes on.</p>
-        {card.problem && <p className="problem">{card.problem}</p>}
-        <div className="card-actions">
-          <button type="button" onClick={openApps}>
+      <RequestCard title={`${botName} wants you to connect apps`} aria-label="Connect apps">
+        {request.suggested.length > 0 && <Note>It suggests {request.suggested.join(", ")}.</Note>}
+        <Note>Connect them under Apps, then press Done so {botName} goes on.</Note>
+        {card.problem && <Problem>{card.problem}</Problem>}
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={openApps}>
             Open Apps
-          </button>
-          <button type="button" className="primary" disabled={!online} onClick={() => thread.finishConnecting()}>
+          </Button>
+          <Button type="button" size="sm" disabled={!online} onClick={() => thread.finishConnecting()}>
             Done
-          </button>
+          </Button>
         </div>
-      </section>
+      </RequestCard>
     );
   }
   const waiting = openTargets(request);
   return (
-    <section className="card" aria-label="Connect apps">
-      <h3>{botName} wants to connect {request.targets.length === 1 ? request.targets[0].title : "apps"}</h3>
-      <ul className="connect-rows">
+    <RequestCard title={`${botName} wants to connect ${request.targets.length === 1 ? request.targets[0].title : "apps"}`} aria-label="Connect apps">
+      <ul className="flex flex-col divide-y rounded-lg border">
         {request.targets.map((target) => (
           <TargetRow key={target.name} thread={thread} target={target} card={card} online={online} />
         ))}
       </ul>
-      {card.problem && <p className="problem">{card.problem}</p>}
-      <p className="card-note">{botName} waits up to 5 minutes. Not now lets it go on without them.</p>
+      {card.problem && <Problem>{card.problem}</Problem>}
+      <Note className="text-xs">{botName} waits up to 5 minutes. Not now lets it go on without them.</Note>
       {waiting.length > 0 && (
-        <div className="card-actions">
-          <button type="button" disabled={!online || card.busy.length > 0} onClick={() => thread.skipConnection()}>
-            Not now
-          </button>
-        </div>
+        <Button type="button" size="sm" variant="ghost" className="self-start" disabled={!online || card.busy.length > 0} onClick={() => thread.skipConnection()}>
+          Not now
+        </Button>
       )}
-    </section>
+    </RequestCard>
   );
 }
 
@@ -69,16 +68,16 @@ function TargetRow({ thread, target, card, online }: { thread: ChatThread; targe
                   ? "Getting the sign-in page…"
                   : undefined;
   return (
-    <li className="connect-row">
-      <div className="connect-row-text">
-        <span className="connect-row-name">{target.title}</span>
-        {status && <span className={target.state === "failed" ? "routine-failed" : "card-note"}>{status}</span>}
-        {target.instructions && <span className="card-note">{target.instructions}</span>}
+    <li className="flex items-center justify-between gap-3 px-3 py-2.5">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="font-semibold">{target.title}</span>
+        {status && (target.state === "failed" ? <Problem>{status}</Problem> : <Note>{status}</Note>)}
+        {target.instructions && <Note>{target.instructions}</Note>}
       </div>
       {offer.kind === "signIn" && (
-        <button
+        <Button
           type="button"
-          className="primary"
+          size="sm"
           disabled={!online}
           onClick={() => {
             const url = thread.connectApp(target);
@@ -86,17 +85,17 @@ function TargetRow({ thread, target, card, online }: { thread: ChatThread; targe
           }}
         >
           {opened ? "Open again" : "Connect"}
-        </button>
+        </Button>
       )}
       {offer.kind === "approve" && (
-        <button type="button" className="primary" disabled={!online || busy} onClick={() => thread.connectApp(target)}>
+        <Button type="button" size="sm" disabled={!online || busy} onClick={() => thread.connectApp(target)}>
           {busy ? "Adding…" : target.action === "enable" ? "Turn on" : "Add"}
-        </button>
+        </Button>
       )}
       {offer.kind === "retry" && (
-        <button type="button" disabled={!online || busy} onClick={() => thread.retryApp(target)}>
+        <Button type="button" size="sm" variant="outline" disabled={!online || busy} onClick={() => thread.retryApp(target)}>
           {busy ? "Trying…" : "Try again"}
-        </button>
+        </Button>
       )}
     </li>
   );

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { BotScreen } from "../hermes/screen";
 
 /**
@@ -61,46 +63,57 @@ export function ScreenView({ screen, botName, onClose }: { screen: BotScreen; bo
         ? "Someone else is in control. You're watching."
         : `${botName} is in control. You're watching.`;
 
+  // The computer always shows dark, whatever Windows's setting, like the screen it frames.
+  const barButton = "border-stone-700 bg-stone-800 text-stone-100 hover:bg-stone-700 hover:text-stone-100";
+  const barPrimary = "bg-stone-100 text-stone-900 hover:bg-stone-200";
+
   return (
-    <section className={`screen-view${view.control === "you" ? " in-control" : ""}`} aria-label={`${botName}'s computer`}>
-      <header className="screen-bar">
-        <span className="screen-status" role="status">
+    <section
+      className={cn("absolute inset-0 z-20 flex flex-col bg-neutral-950 text-stone-100", view.control === "you" && "shadow-[inset_0_0_0_3px_#dc2626]")}
+      aria-label={`${botName}'s computer`}
+    >
+      <header className="flex flex-wrap items-center justify-between gap-2 bg-stone-900 px-3 py-2">
+        <span className="text-[13px]" role="status">
           {!running ? `${botName}'s computer is off.` : link === "lost" ? "Lost the connection to the computer." : who}
         </span>
-        <div className="card-actions">
+        <div className="flex items-center gap-2">
           {!running && (
-            <button type="button" className="primary" disabled={view.isBusy || !!view.status?.blocker} onClick={() => void screen.start()}>
+            <Button type="button" size="sm" className={barPrimary} disabled={view.isBusy || !!view.status?.blocker} onClick={() => void screen.start()}>
               {view.isBusy ? "Starting…" : "Start"}
-            </button>
+            </Button>
           )}
           {running && link === "lost" && (
-            <button type="button" onClick={() => void screen.watch()}>
+            <Button type="button" size="sm" variant="outline" className={barButton} onClick={() => void screen.watch()}>
               Reconnect
-            </button>
+            </Button>
           )}
           {running && view.control !== "you" && (
-            <button type="button" className="primary" disabled={view.isBusy} onClick={() => void screen.takeOver()}>
+            <Button type="button" size="sm" className={barPrimary} disabled={view.isBusy} onClick={() => void screen.takeOver()}>
               Take over
-            </button>
+            </Button>
           )}
           {running && view.control === "you" && (
-            <button type="button" className="primary" disabled={view.isBusy} onClick={() => void screen.handBack()}>
+            <Button type="button" size="sm" className={barPrimary} disabled={view.isBusy} onClick={() => void screen.handBack()}>
               Hand back
-            </button>
+            </Button>
           )}
-          <button type="button" className="icon-button" aria-label="Close the computer" onClick={onClose}>
-            <X size={18} aria-hidden />
-          </button>
+          <Button type="button" variant="ghost" size="icon" className="size-8 text-stone-300 hover:bg-stone-800 hover:text-stone-100" aria-label="Close the computer" onClick={onClose}>
+            <X aria-hidden />
+          </Button>
         </div>
       </header>
-      {view.lease?.reason && view.control === "agent" && <p className="screen-ask">{botName} asks you to take over: {view.lease.reason}</p>}
-      {view.status?.blocker && !running && <p className="problem">{view.status.blocker}</p>}
+      {view.lease?.reason && view.control === "agent" && (
+        <p className="bg-orange-950 px-3 py-1.5 text-[13px] text-orange-300">
+          {botName} asks you to take over: {view.lease.reason}
+        </p>
+      )}
+      {view.status?.blocker && !running && <p className="px-3 py-1.5 text-[13px] text-orange-300">{view.status.blocker}</p>}
       {view.problem && (
-        <p className="problem" role="alert">
+        <p className="px-3 py-1.5 text-[13px] text-orange-300" role="alert">
           {view.problem}
         </p>
       )}
-      <div className="screen-canvas" ref={canvas}>
+      <div className="relative min-h-0 flex-1 overflow-hidden" ref={canvas}>
         {view.demo && <DemoDesktop botName={botName} />}
       </div>
     </section>
@@ -110,7 +123,7 @@ export function ScreenView({ screen, botName, onClose }: { screen: BotScreen; bo
 /** The demo's made-up desktop: a browser with a page the Bot is filling in. */
 function DemoDesktop({ botName }: { botName: string }) {
   return (
-    <svg className="demo-desktop" viewBox="0 0 1440 900" role="img" aria-label={`${botName}'s demo desktop`}>
+    <svg className="size-full" viewBox="0 0 1440 900" role="img" aria-label={`${botName}'s demo desktop`}>
       <rect width="1440" height="900" fill="#2f3b52" />
       <rect x="0" y="864" width="1440" height="36" fill="#1f2738" />
       <rect x="120" y="80" width="1200" height="740" rx="10" fill="#f8fafc" />

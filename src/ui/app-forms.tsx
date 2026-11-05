@@ -1,7 +1,14 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { presetReady, type AppPreset } from "../hermes/app-presets";
 import { emptyDraft, isDraftComplete, draftHasSecret, type McpCatalogEntry, type McpServerDraft, type McpServerList } from "../hermes/mcp-servers";
 import { openExternal } from "./open-external";
+import { Consent, Field, Note, PageTitle } from "./settings-parts";
 
 interface FormProps {
   list: McpServerList;
@@ -33,43 +40,29 @@ function AppForm({
   }
 
   return (
-    <form className="app-form" onSubmit={submit}>
-      <h3>{title}</h3>
-      <div className="app-form-body" inert={busy}>
+    <form className="flex flex-col gap-4" onSubmit={submit}>
+      <PageTitle>{title}</PageTitle>
+      <div className="flex flex-col gap-4" inert={busy}>
         {children}
-        {needsConsent && (
-          <label className="consent">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-            <span>This gateway uses plain http outside Tailscale, so others on the network could read what you send. Send it anyway.</span>
-          </label>
-        )}
-        <p className="card-note">What you type goes to your gateway, which keeps it. Unibot keeps no copy.</p>
+        {needsConsent && <Consent checked={consent} onChange={setConsent} />}
+        <Note className="text-xs">What you type goes to your gateway, which keeps it. Unibot keeps no copy.</Note>
       </div>
-      <div className="card-actions">
-        <button type="submit" className="primary" disabled={!ready || busy || (needsConsent && !consent)}>
+      <div className="flex gap-2">
+        <Button type="submit" disabled={!ready || busy || (needsConsent && !consent)}>
           {busy ? "Adding…" : "Add"}
-        </button>
-        <button type="button" onClick={onDone} disabled={busy}>
+        </Button>
+        <Button type="button" variant="outline" onClick={onDone} disabled={busy}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
 }
 
-function Field({ label, help, children }: { label: string; help?: ReactNode; children: ReactNode }) {
-  return (
-    <label className="dialog-field">
-      <span>{label}</span>
-      {children}
-      {help && <span className="hint">{help}</span>}
-    </label>
-  );
-}
-
-/** GitHub or Plane, from a few values. */
+/** GitHub, Plane or Composio, from a few values. */
 export function PresetForm({ preset, list, onDone }: FormProps & { preset: AppPreset }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const id = useId();
   const draft = preset.draft(values);
   return (
     <AppForm
@@ -80,15 +73,15 @@ export function PresetForm({ preset, list, onDone }: FormProps & { preset: AppPr
       ready={presetReady(preset, values)}
       add={(allow) => list.add(draft, allow)}
     >
-      <p className="card-note">{preset.needs}</p>
-      <p>
-        <button type="button" className="link-button" onClick={() => void openExternal(preset.link.url)}>
-          {preset.link.label}
-        </button>
-      </p>
+      <Note>{preset.needs}</Note>
+      <Button type="button" variant="link" className="h-auto self-start p-0 text-working" onClick={() => void openExternal(preset.link.url)}>
+        {preset.link.label}
+        <ExternalLink aria-hidden />
+      </Button>
       {preset.fields.map((field) => (
-        <Field key={field.key} label={field.required ? field.label : `${field.label} (optional)`} help={field.help}>
-          <input
+        <Field key={field.key} htmlFor={`${id}-${field.key}`} label={field.required ? field.label : `${field.label} (optional)`} help={field.help}>
+          <Input
+            id={`${id}-${field.key}`}
             type={field.secret ? "password" : "text"}
             autoComplete="off"
             placeholder={field.placeholder}
@@ -104,6 +97,7 @@ export function PresetForm({ preset, list, onDone }: FormProps & { preset: AppPr
 /** A server from Hermes's catalog that asks for keys before it can run. */
 export function CatalogForm({ entry, list, onDone }: FormProps & { entry: McpCatalogEntry }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const id = useId();
   const ready = entry.requiredEnv.every((k) => !k.required || (values[k.name] ?? "").trim() !== "");
   return (
     <AppForm
@@ -114,11 +108,17 @@ export function CatalogForm({ entry, list, onDone }: FormProps & { entry: McpCat
       ready={ready}
       add={(allow) => list.install(entry, Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()])), allow)}
     >
-      {entry.description && <p className="card-note">{entry.description}</p>}
-      {entry.needsInstall && <p className="card-note">The gateway fetches it first, which can take a few minutes.</p>}
+      {entry.description && <Note>{entry.description}</Note>}
+      {entry.needsInstall && <Note>The gateway fetches it first, which can take a few minutes.</Note>}
       {entry.requiredEnv.map((key) => (
-        <Field key={key.name} label={key.required ? (key.prompt ?? key.name) : `${key.prompt ?? key.name} (optional)`}>
-          <input type="password" autoComplete="off" value={values[key.name] ?? ""} onChange={(e) => setValues({ ...values, [key.name]: e.target.value })} />
+        <Field key={key.name} htmlFor={`${id}-${key.name}`} label={key.required ? (key.prompt ?? key.name) : `${key.prompt ?? key.name} (optional)`}>
+          <Input
+            id={`${id}-${key.name}`}
+            type="password"
+            autoComplete="off"
+            value={values[key.name] ?? ""}
+            onChange={(e) => setValues({ ...values, [key.name]: e.target.value })}
+          />
         </Field>
       ))}
     </AppForm>
@@ -139,49 +139,69 @@ function parseEnv(text: string): Record<string, string> {
 export function CustomForm({ list, onDone }: FormProps) {
   const [draft, setDraft] = useState<McpServerDraft>(emptyDraft);
   const [envText, setEnvText] = useState("");
+  const id = useId();
   const full = { ...draft, env: draft.kind === "program" ? parseEnv(envText) : {} };
   const change = (patch: Partial<McpServerDraft>) => setDraft({ ...draft, ...patch });
   return (
     <AppForm title="Add your own" list={list} onDone={onDone} hasSecret={draftHasSecret(full)} ready={isDraftComplete(full)} add={(allow) => list.add(full, allow)}>
-      <Field label="Name" help="Short and without spaces; the Bot sees it in its tool names.">
-        <input value={draft.name} onChange={(e) => change({ name: e.target.value })} placeholder="my-app" />
+      <Field htmlFor={`${id}-name`} label="Name" help="Short and without spaces; the Bot sees it in its tool names.">
+        <Input id={`${id}-name`} value={draft.name} onChange={(e) => change({ name: e.target.value })} placeholder="my-app" />
       </Field>
-      <div className="segmented" role="radiogroup" aria-label="Kind">
-        <button type="button" role="radio" aria-checked={draft.kind === "web"} onClick={() => change({ kind: "web" })}>
-          Web address
-        </button>
-        <button type="button" role="radio" aria-checked={draft.kind === "program"} onClick={() => change({ kind: "program" })}>
-          Program on the gateway
-        </button>
+      <div className="inline-flex self-start rounded-lg bg-muted p-1" role="radiogroup" aria-label="Kind">
+        {(
+          [
+            ["web", "Web address"],
+            ["program", "Program on the gateway"],
+          ] as const
+        ).map(([kind, label]) => (
+          <button
+            key={kind}
+            type="button"
+            role="radio"
+            aria-checked={draft.kind === kind}
+            onClick={() => change({ kind })}
+            className={cn(
+              "rounded-md border-0 bg-transparent px-3 py-1 text-[13px] text-muted-foreground transition-colors",
+              draft.kind === kind && "bg-background font-medium text-foreground shadow-xs",
+            )}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       {draft.kind === "web" ? (
         <>
-          <Field label="Address">
-            <input value={draft.url} onChange={(e) => change({ url: e.target.value })} placeholder="https://mcp.example.com/mcp" />
+          <Field htmlFor={`${id}-url`} label="Address">
+            <Input id={`${id}-url`} value={draft.url} onChange={(e) => change({ url: e.target.value })} placeholder="https://mcp.example.com/mcp" />
           </Field>
-          <Field label="Sign-in">
-            <select value={draft.auth} onChange={(e) => change({ auth: e.target.value as McpServerDraft["auth"] })}>
-              <option value="none">None</option>
-              <option value="signIn">Sign in on the provider's page</option>
-              <option value="token">A token</option>
-            </select>
+          <Field htmlFor={`${id}-auth`} label="Sign-in">
+            <Select value={draft.auth} onValueChange={(value) => change({ auth: value as McpServerDraft["auth"] })}>
+              <SelectTrigger id={`${id}-auth`} className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="signIn">Sign in on the provider's page</SelectItem>
+                <SelectItem value="token">A token</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
           {draft.auth === "token" && (
-            <Field label="Token" help="Sent as a bearer token.">
-              <input type="password" autoComplete="off" value={draft.token} onChange={(e) => change({ token: e.target.value })} />
+            <Field htmlFor={`${id}-token`} label="Token" help="Sent as a bearer token.">
+              <Input id={`${id}-token`} type="password" autoComplete="off" value={draft.token} onChange={(e) => change({ token: e.target.value })} />
             </Field>
           )}
         </>
       ) : (
         <>
-          <Field label="Program">
-            <input value={draft.command} onChange={(e) => change({ command: e.target.value })} placeholder="npx" />
+          <Field htmlFor={`${id}-command`} label="Program">
+            <Input id={`${id}-command`} value={draft.command} onChange={(e) => change({ command: e.target.value })} placeholder="npx" />
           </Field>
-          <Field label="Arguments" help='Separated by spaces. Use "double quotes" around one with spaces.'>
-            <input value={draft.arguments} onChange={(e) => change({ arguments: e.target.value })} placeholder="-y @example/mcp-server" />
+          <Field htmlFor={`${id}-args`} label="Arguments" help='Separated by spaces. Use "double quotes" around one with spaces.'>
+            <Input id={`${id}-args`} value={draft.arguments} onChange={(e) => change({ arguments: e.target.value })} placeholder="-y @example/mcp-server" />
           </Field>
-          <Field label="Environment (optional)" help="One per line, as NAME=value.">
-            <textarea className="env-input" rows={3} value={envText} onChange={(e) => setEnvText(e.target.value)} spellCheck={false} />
+          <Field htmlFor={`${id}-env`} label="Environment (optional)" help="One per line, as NAME=value.">
+            <Textarea id={`${id}-env`} className="font-mono text-xs" rows={3} value={envText} onChange={(e) => setEnvText(e.target.value)} spellCheck={false} />
           </Field>
         </>
       )}

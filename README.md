@@ -103,7 +103,9 @@ on `127.0.0.1:19119` for trying sign-in, chats, rooms and routines without a rea
 
 Unibot speaks the same gateway protocol as [Usual Bot](https://github.com/usual-labs/usual-bot), the
 native Hermes messenger for Mac and iPhone, and follows its design. It uses
-[Tauri](https://tauri.app), [React](https://react.dev), [Lucide](https://lucide.dev) icons (ISC), [markdown-it](https://github.com/markdown-it/markdown-it)
+[Tauri](https://tauri.app), [React](https://react.dev), [Tailwind CSS](https://tailwindcss.com),
+[shadcn/ui](https://ui.shadcn.com) and [Radix](https://www.radix-ui.com) (MIT),
+[prompt-kit](https://www.prompt-kit.com) (MIT), [Lucide](https://lucide.dev) icons (ISC), [markdown-it](https://github.com/markdown-it/markdown-it)
 (MIT) and [noVNC](https://github.com/novnc/noVNC) (MPL-2.0) for the Bot's screen.
 
 ## License

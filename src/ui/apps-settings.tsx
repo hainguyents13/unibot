@@ -1,11 +1,15 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { ChevronLeft } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, ExternalLink, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { APP_PRESETS, type AppPreset } from "../hermes/app-presets";
 import type { Connector, ConnectorList } from "../hermes/connectors";
 import { serverLocation, type McpCatalogEntry, type McpServer, type McpServerList } from "../hermes/mcp-servers";
 import type { BotApps } from "../hermes/session";
 import { CatalogForm, CustomForm, PresetForm } from "./app-forms";
 import { openExternal } from "./open-external";
+import { Note, Panel, Problem, SectionTitle } from "./settings-parts";
 
 type Screen = { kind: "list" } | { kind: "add" } | { kind: "preset"; preset: AppPreset } | { kind: "catalog"; entry: McpCatalogEntry } | { kind: "custom" };
 
@@ -29,23 +33,15 @@ export function AppsSettings({ apps, botName }: { apps: BotApps; botName: string
   };
 
   return (
-    <div className="apps-settings">
+    <div className="flex flex-col gap-3">
       {screen.kind !== "list" && (
-        <button type="button" className="link-button with-icon" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
-          <ChevronLeft size={15} aria-hidden />
+        <Button type="button" variant="link" className="h-auto self-start p-0 text-working" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
+          <ChevronLeft aria-hidden />
           {screen.kind === "add" ? `${botName}'s apps` : "Add an app"}
-        </button>
+        </Button>
       )}
-      {servers.notice && (
-        <p className="card-note" role="status">
-          {servers.notice}
-        </p>
-      )}
-      {servers.problem && (
-        <p className="problem" role="alert">
-          {servers.problem}
-        </p>
-      )}
+      {servers.notice && <Note role="status">{servers.notice}</Note>}
+      {servers.problem && <Problem>{servers.problem}</Problem>}
       {screen.kind === "list" && <AppsList apps={apps} botName={botName} onAdd={() => setScreen({ kind: "add" })} />}
       {screen.kind === "add" && <AddApp list={apps.servers} onPick={setScreen} />}
       {screen.kind === "preset" && <PresetForm preset={screen.preset} list={apps.servers} onDone={() => setScreen({ kind: "list" })} />}
@@ -61,13 +57,16 @@ function AppsList({ apps, botName, onAdd }: { apps: BotApps; botName: string; on
   return (
     <>
       {view.needsApply && (
-        <div className="apply-note">
-          <p className="card-note">
+        <Panel className="border-working/40 bg-working-soft/40">
+          <Note>
             {botName}'s open chat still has the apps it started with. Applying reloads them now; the next reply costs more, since the whole conversation is sent
             again. Otherwise new chats get them.
-          </p>
-          <button
+          </Note>
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
+            className="self-start"
             disabled={applying || !apps.servers.canApplyNow}
             onClick={async () => {
               setApplying(true);
@@ -76,23 +75,20 @@ function AppsList({ apps, botName, onAdd }: { apps: BotApps; botName: string; on
             }}
           >
             {applying ? "Applying…" : "Apply to the open chat"}
-          </button>
-        </div>
+          </Button>
+        </Panel>
       )}
-      <div className="panel-section-row">
-        <h3 className="panel-section">On the gateway</h3>
-        <button type="button" className="primary" onClick={onAdd}>
+      <div className="flex items-center justify-between gap-2">
+        <SectionTitle className="mt-0">On the gateway</SectionTitle>
+        <Button type="button" size="sm" onClick={onAdd}>
+          <Plus aria-hidden />
           Add an app
-        </button>
+        </Button>
       </div>
-      {view.phase.kind === "loading" && <p className="card-note">Loading…</p>}
-      {view.phase.kind === "failed" && (
-        <p className="problem" role="alert">
-          {view.phase.message}
-        </p>
-      )}
-      {view.phase.kind === "ready" && view.servers.length === 0 && <p className="card-note">{botName} has no apps yet. Add GitHub, Plane, Linear and more.</p>}
-      <ul className="routines">
+      {view.phase.kind === "loading" && <Note>Loading…</Note>}
+      {view.phase.kind === "failed" && <Problem>{view.phase.message}</Problem>}
+      {view.phase.kind === "ready" && view.servers.length === 0 && <Note>{botName} has no apps yet. Add GitHub, Plane, Linear and more.</Note>}
+      <ul className="flex flex-col gap-2">
         {view.servers.map((server) => (
           <ServerRow key={server.name} list={apps.servers} server={server} />
         ))}
@@ -118,77 +114,76 @@ function ServerRow({ list, server }: { list: McpServerList; server: McpServer })
   else if (check?.kind === "failed") status = { text: check.message, failed: true };
 
   return (
-    <li className="routine">
-      <div className="routine-top">
-        <span className="routine-name">{server.name}</span>
-        <label className="switch">
-          <input
-            type="checkbox"
+    <li>
+      <Panel>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-semibold">{server.name}</span>
+          <Switch
             checked={server.enabled}
             disabled={fromPlugin}
-            onChange={(e) => void list.setEnabled(server, e.target.checked)}
+            onCheckedChange={(checked) => void list.setEnabled(server, checked)}
             aria-label={`${server.enabled ? "Turn off" : "Turn on"} ${server.name}`}
           />
-          <span aria-hidden="true" />
-        </label>
-      </div>
-      <p className="card-note">
-        {serverLocation(server)}
-        {server.auth === "oauth" ? " · signs in" : server.auth === "header" ? " · token" : ""}
-        {fromPlugin ? ` · from ${server.plugin || "a plugin"}` : ""}
-        {!server.enabled ? " · off" : ""}
-      </p>
-      {status && <p className={status.failed ? "routine-failed" : "card-note"}>{status.text}</p>}
-      {check?.kind === "passed" && check.tools.length > 0 && (
-        <details className="tool-list">
-          <summary>Tools</summary>
-          <ul>
-            {check.tools.map((tool) => (
-              <li key={tool.name}>
-                <code>{tool.name}</code>
-                {tool.description ? ` · ${tool.description}` : ""}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-      {confirming ? (
-        <div className="card-actions">
-          <span className="card-note">Remove “{server.name}”? A key or sign-in it saved stays on the gateway.</span>
-          <button type="button" className="danger" onClick={() => void list.remove(server).then(() => setConfirming(false))}>
-            Remove
-          </button>
-          <button type="button" onClick={() => setConfirming(false)}>
-            Keep
-          </button>
         </div>
-      ) : (
-        <div className="card-actions">
-          {server.auth === "oauth" &&
-            !fromPlugin &&
-            (signingIn ? (
-              <button type="button" onClick={() => void list.cancelSignIn(server)}>
-                Cancel sign-in
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={check?.kind === "passed" ? undefined : "primary"}
-                onClick={() => void list.signIn(server, (url) => void openExternal(url))}
-              >
-                {check?.kind === "passed" ? "Sign in again" : "Sign in"}
-              </button>
-            ))}
-          <button type="button" disabled={check?.kind === "running"} onClick={() => void list.test(server)}>
-            Test
-          </button>
-          {!fromPlugin && (
-            <button type="button" onClick={() => setConfirming(true)}>
+        <Note className="break-all">
+          {serverLocation(server)}
+          {server.auth === "oauth" ? " · signs in" : server.auth === "header" ? " · token" : ""}
+          {fromPlugin ? ` · from ${server.plugin || "a plugin"}` : ""}
+          {!server.enabled ? " · off" : ""}
+        </Note>
+        {status && (status.failed ? <Problem>{status.text}</Problem> : <Note>{status.text}</Note>)}
+        {check?.kind === "passed" && check.tools.length > 0 && (
+          <details className="text-[13px]">
+            <summary className="cursor-pointer text-muted-foreground">Tools</summary>
+            <ul className="mt-1 flex max-h-48 flex-col gap-1 overflow-y-auto pl-4">
+              {check.tools.map((tool) => (
+                <li key={tool.name}>
+                  <code className="rounded bg-muted px-1 py-0.5 text-xs">{tool.name}</code>
+                  {tool.description ? <span className="text-muted-foreground"> · {tool.description}</span> : ""}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+        {confirming ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Note className="w-full">Remove “{server.name}”? A key or sign-in it saved stays on the gateway.</Note>
+            <Button type="button" variant="destructive" size="sm" onClick={() => void list.remove(server).then(() => setConfirming(false))}>
               Remove
-            </button>
-          )}
-        </div>
-      )}
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(false)}>
+              Keep
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {server.auth === "oauth" &&
+              !fromPlugin &&
+              (signingIn ? (
+                <Button type="button" variant="outline" size="sm" onClick={() => void list.cancelSignIn(server)}>
+                  Cancel sign-in
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={check?.kind === "passed" ? "outline" : "default"}
+                  onClick={() => void list.signIn(server, (url) => void openExternal(url))}
+                >
+                  {check?.kind === "passed" ? "Sign in again" : "Sign in"}
+                </Button>
+              ))}
+            <Button type="button" variant="outline" size="sm" disabled={check?.kind === "running"} onClick={() => void list.test(server)}>
+              Test
+            </Button>
+            {!fromPlugin && (
+              <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setConfirming(true)}>
+                Remove
+              </Button>
+            )}
+          </div>
+        )}
+      </Panel>
     </li>
   );
 }
@@ -198,28 +193,18 @@ function ConnectedApps({ list }: { list: ConnectorList }) {
   const view = useSyncExternalStore(list.subscribe, list.getView);
   return (
     <>
-      <h3 className="panel-section">Connected apps</h3>
-      {view.phase.kind === "loading" && <p className="card-note">Loading…</p>}
+      <SectionTitle className="mt-4">Connected apps</SectionTitle>
+      {view.phase.kind === "loading" && <Note>Loading…</Note>}
       {view.phase.kind === "unavailable" && (
-        <p className="card-note">
-          Gmail, Google Drive, Slack and more connect through a Nous Portal account in Hermes. This gateway doesn't have one, so add apps above instead.
-        </p>
+        <Note>Gmail, Google Drive, Slack and more connect through a Nous Portal account in Hermes. This gateway doesn't have one, so add apps above instead.</Note>
       )}
-      {view.phase.kind === "failed" && <p className="problem">{view.phase.message}</p>}
-      {view.notice && (
-        <p className="card-note" role="status">
-          {view.notice}
-        </p>
-      )}
-      {view.problem && (
-        <p className="problem" role="alert">
-          {view.problem}
-        </p>
-      )}
+      {view.phase.kind === "failed" && <Problem>{view.phase.message}</Problem>}
+      {view.notice && <Note role="status">{view.notice}</Note>}
+      {view.problem && <Problem>{view.problem}</Problem>}
       {view.phase.kind === "ready" && (
         <>
-          <p className="card-note">Connected through the Nous Portal. Disconnecting an app takes it from every Bot on this account.</p>
-          <ul className="routines">
+          <Note>Connected through the Nous Portal. Disconnecting an app takes it from every Bot on this account.</Note>
+          <ul className="flex flex-col gap-2">
             {view.connectors.map((connector) => (
               <ConnectorRow key={connector.slug} list={list} connector={connector} />
             ))}
@@ -236,31 +221,54 @@ function ConnectorRow({ list, connector }: { list: ConnectorList; connector: Con
   const waiting = connecting?.kind === "starting" || connecting?.kind === "waiting";
   const disconnecting = view.disconnecting.includes(connector.slug);
   return (
-    <li className="routine">
-      <div className="routine-top">
-        <span className="routine-name">{connector.name}</span>
-        {connector.isConnected && <span className="badge badge-connected">Connected</span>}
-      </div>
-      {connector.summary && <p className="card-note">{connector.summary}</p>}
-      {connector.statusReason && <p className="routine-failed">{connector.statusReason}</p>}
-      {connecting?.kind === "waiting" && <p className="card-note">Finish signing in in your browser. This updates when Hermes sees it.</p>}
-      {connecting?.kind === "failed" && <p className="routine-failed">{connecting.message}</p>}
-      <div className="card-actions">
-        {connector.isConnected ? (
-          <button type="button" disabled={disconnecting} onClick={() => void list.disconnect(connector)}>
-            {disconnecting ? "Disconnecting…" : "Disconnect"}
-          </button>
-        ) : waiting ? (
-          <button type="button" onClick={() => void list.cancelConnecting(connector)}>
-            Cancel
-          </button>
-        ) : (
-          <button type="button" className="primary" onClick={() => void list.connect(connector, (url) => void openExternal(url))}>
-            Connect
-          </button>
-        )}
-      </div>
+    <li>
+      <Panel>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-semibold">{connector.name}</span>
+          {connector.isConnected && <Badge className="rounded-full border-0 bg-working-soft text-working">Connected</Badge>}
+        </div>
+        {connector.summary && <Note>{connector.summary}</Note>}
+        {connector.statusReason && <Problem>{connector.statusReason}</Problem>}
+        {connecting?.kind === "waiting" && <Note>Finish signing in in your browser. This updates when Hermes sees it.</Note>}
+        {connecting?.kind === "failed" && <Problem>{connecting.message}</Problem>}
+        <div className="flex gap-2">
+          {connector.isConnected ? (
+            <Button type="button" variant="outline" size="sm" disabled={disconnecting} onClick={() => void list.disconnect(connector)}>
+              {disconnecting ? "Disconnecting…" : "Disconnect"}
+            </Button>
+          ) : waiting ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => void list.cancelConnecting(connector)}>
+              Cancel
+            </Button>
+          ) : (
+            <Button type="button" size="sm" onClick={() => void list.connect(connector, (url) => void openExternal(url))}>
+              Connect
+            </Button>
+          )}
+        </div>
+      </Panel>
     </li>
+  );
+}
+
+/** A choice in Add an app: a quick setup, a catalog entry, or your own. */
+function Pick({ title, tag, description, disabled, onClick }: { title: string; tag?: string; description?: ReactNode; disabled?: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent disabled:cursor-default disabled:opacity-50 disabled:hover:bg-card"
+    >
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="font-semibold">
+          {title}
+          {tag && <span className="font-normal text-muted-foreground"> · {tag}</span>}
+        </span>
+        {description && <span className="text-[13px] text-muted-foreground">{description}</span>}
+      </span>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    </button>
   );
 }
 
@@ -282,59 +290,59 @@ function AddApp({ list, onPick }: { list: McpServerList; onPick: (screen: Screen
 
   return (
     <>
-      <h3 className="panel-section">Quick setup</h3>
-      <ul className="app-picks">
+      <SectionTitle className="mt-0">Quick setup</SectionTitle>
+      <ul className="flex flex-col gap-2">
         {APP_PRESETS.map((preset) => (
           <li key={preset.id}>
-            <button type="button" className="app-pick" onClick={() => onPick({ kind: "preset", preset })}>
-              <span className="routine-name">{preset.title}</span>
-              <span className="card-note">{preset.description}</span>
-            </button>
+            <Pick title={preset.title} description={preset.description} onClick={() => onPick({ kind: "preset", preset })} />
           </li>
         ))}
       </ul>
-      <details className="google-note">
-        <summary>Google Drive, Docs, Sheets, Slides and Calendar</summary>
-        <p className="card-note">
-          The simplest way is Composio above, or Connected apps if this gateway has a Nous Portal account; either keeps your Google sign-in for you. To keep
-          it on your gateway instead, run a Google Workspace MCP server there with your own Google Cloud OAuth client and an https address, then add it
-          under Your own with Sign in.
-        </p>
-        <button type="button" className="link-button" onClick={() => void openExternal("https://github.com/taylorwilsdon/google_workspace_mcp")}>
+      <details className="rounded-lg border px-3 py-2.5 text-[13px]">
+        <summary className="cursor-pointer font-semibold">Google Drive, Docs, Sheets, Slides and Calendar</summary>
+        <Note className="mt-2">
+          The simplest way is Composio above, or Connected apps if this gateway has a Nous Portal account; either keeps your Google sign-in for you. To keep it
+          on your gateway instead, run a Google Workspace MCP server there with your own Google Cloud OAuth client and an https address, then add it under Your
+          own with Sign in.
+        </Note>
+        <Button
+          type="button"
+          variant="link"
+          className="mt-1 h-auto p-0 text-[13px] text-working"
+          onClick={() => void openExternal("https://github.com/taylorwilsdon/google_workspace_mcp")}
+        >
           About the Google Workspace MCP server
-        </button>
+          <ExternalLink aria-hidden />
+        </Button>
       </details>
-      <h3 className="panel-section">From Hermes's catalog</h3>
-      {view.catalogPhase.kind === "loading" && <p className="card-note">Loading…</p>}
-      {view.catalogPhase.kind === "failed" && <p className="problem">{view.catalogPhase.message}</p>}
-      <ul className="app-picks">
+      <SectionTitle>From Hermes's catalog</SectionTitle>
+      {view.catalogPhase.kind === "loading" && <Note>Loading…</Note>}
+      {view.catalogPhase.kind === "failed" && <Problem>{view.catalogPhase.message}</Problem>}
+      <ul className="flex flex-col gap-2">
         {view.catalog.map((entry) => (
           <li key={entry.name}>
-            <button type="button" className="app-pick" disabled={entry.installed || adding !== undefined} onClick={() => void pickCatalog(entry)}>
-              <span className="routine-name">
-                {entry.name}
-                <span className="card-note">
-                  {entry.installed
-                    ? " · added"
-                    : adding === entry.name
-                      ? " · adding…"
-                      : entry.authType === "oauth"
-                        ? " · signs in"
-                        : entry.requiredEnv.length
-                          ? " · needs a key"
-                          : ""}
-                </span>
-              </span>
-              {entry.description && <span className="card-note">{entry.description}</span>}
-            </button>
+            <Pick
+              title={entry.name}
+              tag={
+                entry.installed
+                  ? "added"
+                  : adding === entry.name
+                    ? "adding…"
+                    : entry.authType === "oauth"
+                      ? "signs in"
+                      : entry.requiredEnv.length
+                        ? "needs a key"
+                        : undefined
+              }
+              description={entry.description}
+              disabled={entry.installed || adding !== undefined}
+              onClick={() => void pickCatalog(entry)}
+            />
           </li>
         ))}
       </ul>
-      <h3 className="panel-section">Your own</h3>
-      <button type="button" className="app-pick" onClick={() => onPick({ kind: "custom" })}>
-        <span className="routine-name">Another MCP server</span>
-        <span className="card-note">A web address, or a program the gateway runs.</span>
-      </button>
+      <SectionTitle>Your own</SectionTitle>
+      <Pick title="Another MCP server" description="A web address, or a program the gateway runs." onClick={() => onPick({ kind: "custom" })} />
     </>
   );
 }

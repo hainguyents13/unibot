@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { notify, onOpenTarget, setAttention } from "../platform/desktop";
 import type { ChatThread } from "../hermes/chat-thread";
 import type { Link, Session, SessionState } from "../hermes/session";
@@ -54,43 +55,49 @@ export function Shell({ session, state }: ShellProps) {
   useEffect(() => setAttention(needsYou), [needsYou]);
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <header className="sidebar-header">
-          <h1>Bots</h1>
-          <span className="gateway">{state.gateway.displayName}</span>
+    <div className="grid h-screen grid-cols-[minmax(240px,300px)_1fr]">
+      <aside className="flex min-h-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+        <header className="flex items-baseline justify-between gap-2 px-4 pt-4 pb-2">
+          <h1 className="text-lg font-semibold">Bots</h1>
+          <span className="truncate text-xs text-muted-foreground" title={state.gateway.baseUrl}>
+            {state.gateway.displayName}
+          </span>
         </header>
         <LinkNotice link={state.link} />
-        <ContactList
-          label="Bots"
-          rows={state.bots}
-          selectedId={selection?.kind === "bot" ? selection.id : undefined}
-          now={now}
-          onSelect={(id) => setSelection({ kind: "bot", id })}
-        />
-        {state.link.kind === "online" && state.bots.length === 0 && (
-          <p className="sidebar-note">No Bots on this gateway yet. Make one in the Hermes app.</p>
-        )}
-        <div className="sidebar-section-row">
-          <h2 className="sidebar-section">Rooms</h2>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="New room"
-            title="New room"
-            onClick={() => setMakingRoom(true)}
-          >
-            <Plus size={16} aria-hidden />
-          </button>
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-2">
+          <ContactList
+            label="Bots"
+            rows={state.bots}
+            selectedId={selection?.kind === "bot" ? selection.id : undefined}
+            now={now}
+            onSelect={(id) => setSelection({ kind: "bot", id })}
+          />
+          {state.link.kind === "online" && state.bots.length === 0 && (
+            <p className="px-4 text-[13px] text-muted-foreground">No Bots on this gateway yet. Make one in the Hermes app.</p>
+          )}
+          <div className="mt-3 flex items-center justify-between pr-2 pl-4">
+            <h2 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Rooms</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground"
+              aria-label="New room"
+              title="New room"
+              onClick={() => setMakingRoom(true)}
+            >
+              <Plus aria-hidden />
+            </Button>
+          </div>
+          <ContactList
+            label="Rooms"
+            rows={state.rooms}
+            selectedId={selection?.kind === "room" ? selection.id : undefined}
+            now={now}
+            avatar={() => "#"}
+            onSelect={(id) => setSelection({ kind: "room", id })}
+          />
         </div>
-        <ContactList
-          label="Rooms"
-          rows={state.rooms}
-          selectedId={selection?.kind === "room" ? selection.id : undefined}
-          now={now}
-          avatar={() => "#"}
-          onSelect={(id) => setSelection({ kind: "room", id })}
-        />
         {makingRoom && (
           <NewRoomDialog
             bots={state.bots}
@@ -99,15 +106,15 @@ export function Shell({ session, state }: ShellProps) {
             onClose={() => setMakingRoom(false)}
           />
         )}
-        <footer className="sidebar-footer">
-          <button type="button" className="tool-button" onClick={() => setSettings({ kind: "gateway" })}>
-            <Settings size={16} aria-hidden />
+        <footer className="border-t p-2">
+          <Button type="button" variant="ghost" className="w-full justify-start text-muted-foreground" onClick={() => setSettings({ kind: "gateway" })}>
+            <Settings aria-hidden />
             Settings
-          </button>
+          </Button>
         </footer>
         {settings && <SettingsDialog session={session} state={state} page={settings} onPage={setSettings} onClose={() => setSettings(undefined)} />}
       </aside>
-      <main className="chat">
+      <main className="relative flex min-h-0 min-w-0 flex-col">
         {bot && thread?.botId === bot.id ? (
           <ChatView
             key={bot.id}
@@ -126,7 +133,7 @@ export function Shell({ session, state }: ShellProps) {
             remove={() => session.deleteRoom(room.id)}
           />
         ) : (
-          <p className="empty">Pick a Bot or a room to chat with.</p>
+          <p className="m-auto text-muted-foreground">Pick a Bot or a room to chat with.</p>
         )}
       </main>
     </div>
@@ -134,24 +141,24 @@ export function Shell({ session, state }: ShellProps) {
 }
 
 function LinkNotice({ link }: { link: Link }) {
+  const box = "mx-3 mb-2 rounded-md px-3 py-2 text-[13px]";
   switch (link.kind) {
     case "connecting":
       return (
-        <p className="link-notice" role="status">
+        <p className={`${box} bg-muted text-muted-foreground`} role="status">
           Connecting…
         </p>
       );
     case "offline":
       return (
-        <p className="link-notice link-offline" role="status">
+        <p className={`${box} bg-attention-soft text-attention`} role="status">
           {link.message} Trying again…
         </p>
       );
     case "online":
       return link.dialect === "canonical" ? (
-        <p className="link-notice" role="status">
-          This gateway runs <code>hermes gateway</code>. Chats there aren't supported yet; use{" "}
-          <code>hermes dashboard</code>.
+        <p className={`${box} bg-muted text-muted-foreground`} role="status">
+          This gateway runs <code>hermes gateway</code>. Chats there aren't supported yet; use <code>hermes dashboard</code>.
         </p>
       ) : null;
   }

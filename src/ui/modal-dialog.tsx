@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { describeError } from "../hermes/gateway-error";
 
 interface ModalDialogProps {
@@ -15,13 +17,8 @@ interface ModalDialogProps {
 
 /** A modal dialog with Cancel and one action. It keeps focus inside itself and closes on Esc. */
 export function ModalDialog({ title, action, perform, failure, onClose, children }: ModalDialogProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
-
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -30,7 +27,7 @@ export function ModalDialog({ title, action, perform, failure, onClose, children
     setProblem(undefined);
     try {
       await perform();
-      dialog.current?.close();
+      onClose();
     } catch (error) {
       setProblem(`${failure} ${describeError(error)}`);
       setBusy(false);
@@ -38,35 +35,37 @@ export function ModalDialog({ title, action, perform, failure, onClose, children
   }
 
   return (
-    <dialog
-      ref={dialog}
-      className="dialog"
-      aria-label={title}
-      onCancel={(event) => {
-        if (busy) event.preventDefault();
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        // Nothing closes it while the work runs.
+        if (!open && !busy) onClose();
       }}
-      onClose={onClose}
     >
-      <form className="dialog-form" onSubmit={submit}>
-        <h2>{title}</h2>
-        {/* What's inside can't be changed while the work runs. */}
-        <div className="dialog-body" inert={busy}>
-          {children}
-        </div>
-        {problem && (
-          <p className="problem" role="alert">
-            {problem}
-          </p>
-        )}
-        <div className="dialog-actions">
-          <button type="button" onClick={() => dialog.current?.close()} disabled={busy}>
-            Cancel
-          </button>
-          <button type="submit" className={action.danger ? "danger" : "primary"} disabled={busy || !action.enabled}>
-            {busy ? action.busyLabel : action.label}
-          </button>
-        </div>
-      </form>
-    </dialog>
+      <DialogContent className="flex max-h-[calc(100vh-3rem)] flex-col sm:max-w-md" showCloseButton={!busy}>
+        <form className="flex min-h-0 flex-col gap-4" onSubmit={submit}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          {/* What's inside can't be changed while the work runs. */}
+          <div className="flex min-h-0 flex-col gap-3" inert={busy}>
+            {children}
+          </div>
+          {problem && (
+            <p className="text-sm text-destructive" role="alert">
+              {problem}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
+              Cancel
+            </Button>
+            <Button type="submit" variant={action.danger ? "destructive" : "default"} disabled={busy || !action.enabled}>
+              {busy ? action.busyLabel : action.label}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

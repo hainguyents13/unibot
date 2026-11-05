@@ -1,6 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import type { ChatThread } from "../hermes/chat-thread";
 import type { ApprovalChoice, ApprovalPrompt, ChatRequest, ClarifyPrompt, SecretPrompt } from "../hermes/requests";
+import { Note } from "./settings-parts";
 
 const CHOICE_LABELS: Record<ApprovalChoice, string> = {
   once: "Allow once",
@@ -9,10 +13,25 @@ const CHOICE_LABELS: Record<ApprovalChoice, string> = {
   deny: "Deny",
 };
 
+/** A card in the chat for something a Bot waits on you for. */
+export function RequestCard({ title, className, children, ...props }: { title: ReactNode; children: ReactNode } & ComponentProps<"section">) {
+  return (
+    <section className={cn("flex flex-col gap-3 rounded-xl border border-attention/50 bg-card p-4 shadow-xs", className)} {...props}>
+      <h3 className="font-semibold">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+/** A command, path or name the Bot means, as it'll run. */
+export function CommandText({ children }: { children: string }) {
+  return <pre className="overflow-x-auto rounded-md bg-muted px-3 py-2 font-mono text-[13px] whitespace-pre-wrap">{children}</pre>;
+}
+
 export function RequestCards({ thread, requests }: { thread: ChatThread; requests: ChatRequest[] }) {
   if (requests.length === 0) return null;
   return (
-    <div className="requests">
+    <>
       {requests.map((request) => {
         switch (request.kind) {
           case "approval":
@@ -24,29 +43,29 @@ export function RequestCards({ thread, requests }: { thread: ChatThread; request
             return <SecretCard key={request.id} thread={thread} prompt={request} />;
         }
       })}
-    </div>
+    </>
   );
 }
 
 function ApprovalCard({ thread, prompt }: { thread: ChatThread; prompt: ApprovalPrompt }) {
   return (
-    <section className="card" aria-label="Approval">
-      <h3>Allow this command?</h3>
-      <pre className="command">{prompt.command}</pre>
-      {prompt.description && <p className="card-note">{prompt.description}</p>}
-      <div className="card-actions">
+    <RequestCard title="Allow this command?" aria-label="Approval">
+      <CommandText>{prompt.command}</CommandText>
+      {prompt.description && <Note>{prompt.description}</Note>}
+      <div className="flex flex-wrap gap-2">
         {prompt.choices.map((choice) => (
-          <button
+          <Button
             key={choice}
             type="button"
-            className={choice === "once" ? "primary" : undefined}
+            size="sm"
+            variant={choice === "once" ? "default" : choice === "deny" ? "ghost" : "outline"}
             onClick={() => thread.answerApproval(prompt, choice)}
           >
             {CHOICE_LABELS[choice]}
-          </button>
+          </Button>
         ))}
       </div>
-    </section>
+    </RequestCard>
   );
 }
 
@@ -73,41 +92,45 @@ function ClarifyCard({ thread, prompt }: { thread: ChatThread; prompt: ClarifyPr
   }
 
   return (
-    <form className="card" aria-label="Questions" onSubmit={submit}>
-      {prompt.questions.map((q) => (
-        <fieldset key={q.id}>
-          <legend>{q.text}</legend>
-          {q.choices.length > 0 && (
-            <div className="card-actions">
-              {q.choices.map((choice) => (
-                <button
-                  key={choice}
-                  type="button"
-                  aria-pressed={(picked[q.id] ?? []).includes(choice)}
-                  className="choice"
-                  onClick={() => toggle(q.id, choice, q.allowsMultiple)}
-                >
-                  {choice}
-                </button>
-              ))}
-            </div>
-          )}
-          <input
-            aria-label={q.choices.length ? "Or type your own answer" : "Your answer"}
-            placeholder={q.choices.length ? "Or type your own" : "Your answer"}
-            value={typed[q.id] ?? ""}
-            onChange={(e) => setTyped({ ...typed, [q.id]: e.target.value })}
-          />
-        </fieldset>
-      ))}
-      <div className="card-actions">
-        <button type="submit" className="primary">
-          Send answers
-        </button>
-        <button type="button" onClick={() => thread.skipClarify(prompt)}>
-          Skip
-        </button>
-      </div>
+    <form onSubmit={submit}>
+      <RequestCard title={prompt.questions.length === 1 ? "A question for you" : "Questions for you"} aria-label="Questions">
+        {prompt.questions.map((q) => (
+          <fieldset key={q.id} className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm">{q.text}</legend>
+            {q.choices.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {q.choices.map((choice) => (
+                  <Button
+                    key={choice}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    aria-pressed={(picked[q.id] ?? []).includes(choice)}
+                    className="aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+                    onClick={() => toggle(q.id, choice, q.allowsMultiple)}
+                  >
+                    {choice}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <Input
+              aria-label={q.choices.length ? "Or type your own answer" : "Your answer"}
+              placeholder={q.choices.length ? "Or type your own" : "Your answer"}
+              value={typed[q.id] ?? ""}
+              onChange={(e) => setTyped({ ...typed, [q.id]: e.target.value })}
+            />
+          </fieldset>
+        ))}
+        <div className="flex gap-2">
+          <Button type="submit" size="sm">
+            Send answers
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => thread.skipClarify(prompt)}>
+            Skip
+          </Button>
+        </div>
+      </RequestCard>
     </form>
   );
 }
@@ -122,25 +145,20 @@ function SecretCard({ thread, prompt }: { thread: ChatThread; prompt: SecretProm
   }
 
   return (
-    <form className="card" aria-label={sudo ? "Sudo password" : "Secret"} onSubmit={submit}>
-      <h3>{sudo ? "The Bot needs the sudo password" : `The Bot needs ${prompt.name}`}</h3>
-      {sudo ? <pre className="command">{prompt.name}</pre> : prompt.message && <p className="card-note">{prompt.message}</p>}
-      <p className="card-note">It goes straight to your gateway. Unibot keeps no copy.</p>
-      <input
-        type="password"
-        aria-label={sudo ? "Sudo password" : prompt.name}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        autoComplete="off"
-      />
-      <div className="card-actions">
-        <button type="submit" className="primary" disabled={!value}>
-          Send
-        </button>
-        <button type="button" onClick={() => thread.skipSecret(prompt)}>
-          Skip
-        </button>
-      </div>
+    <form onSubmit={submit}>
+      <RequestCard title={sudo ? "The Bot needs the sudo password" : `The Bot needs ${prompt.name}`} aria-label={sudo ? "Sudo password" : "Secret"}>
+        {sudo ? <CommandText>{prompt.name}</CommandText> : prompt.message && <Note>{prompt.message}</Note>}
+        <Note className="text-xs">It goes straight to your gateway. Unibot keeps no copy.</Note>
+        <Input type="password" aria-label={sudo ? "Sudo password" : prompt.name} value={value} onChange={(e) => setValue(e.target.value)} autoComplete="off" />
+        <div className="flex gap-2">
+          <Button type="submit" size="sm" disabled={!value}>
+            Send
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => thread.skipSecret(prompt)}>
+            Skip
+          </Button>
+        </div>
+      </RequestCard>
     </form>
   );
 }

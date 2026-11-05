@@ -1,0 +1,126 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+
+/* shadcn/ui's theme, in Unibot's warm greys. Dark follows Windows's setting. */
+:root {
+  color-scheme: light dark;
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #1c1917;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f4;
+  --secondary-foreground: #1c1917;
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c;
+  --accent: #ecebea;
+  --accent-foreground: #1c1917;
+  --destructive: #b91c1c;
+  --border: #e7e5e4;
+  --input: #d6d3d1;
+  --ring: #a8a29e;
+  --sidebar: #f5f5f4;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #1c1917;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ecebea;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #e7e5e4;
+  --sidebar-ring: #a8a29e;
+  --attention: #c2410c;
+  --attention-soft: #ffedd5;
+  --working: #1d4ed8;
+  --working-soft: #dbeafe;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1c1b1a;
+    --foreground: #f5f5f4;
+    --card: #232221;
+    --card-foreground: #f5f5f4;
+    --popover: #232221;
+    --popover-foreground: #f5f5f4;
+    --primary: #f5f5f4;
+    --primary-foreground: #1c1917;
+    --secondary: #2e2d2b;
+    --secondary-foreground: #f5f5f4;
+    --muted: #2e2d2b;
+    --muted-foreground: #a8a29e;
+    --accent: #2e2d2b;
+    --accent-foreground: #f5f5f4;
+    --destructive: #dc2626;
+    --border: #3a3836;
+    --input: #44403c;
+    --ring: #78716c;
+    --sidebar: #242322;
+    --sidebar-foreground: #f5f5f4;
+    --sidebar-primary: #f5f5f4;
+    --sidebar-primary-foreground: #1c1917;
+    --sidebar-accent: #2e2d2b;
+    --sidebar-accent-foreground: #f5f5f4;
+    --sidebar-border: #3a3836;
+    --sidebar-ring: #78716c;
+    --attention: #fdba74;
+    --attention-soft: #431407;
+    --working: #93c5fd;
+    --working-soft: #172554;
+  }
+}
+
+@theme inline {
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-attention: var(--attention);
+  --color-attention-soft: var(--attention-soft);
+  --color-working: var(--working);
+  --color-working-soft: var(--working-soft);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-size: 14px;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    line-height: 1.4;
+  }
+}
