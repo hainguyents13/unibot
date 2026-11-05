@@ -1,9 +1,42 @@
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import type { Session, SessionState } from "../hermes/session";
 
 interface ConnectViewProps {
   session: Session;
   state: Extract<SessionState, { kind: "signedOut" | "signingIn" }>;
+}
+
+/** Gateways signed in to before: open one, or forget it along with its saved sign-in. */
+export function RecentGateways({
+  title,
+  gateways,
+  onOpen,
+  onForget,
+}: {
+  title: string;
+  gateways: string[];
+  onOpen: (gateway: string) => void;
+  onForget: (gateway: string) => void;
+}) {
+  const id = useId();
+  if (gateways.length === 0) return null;
+  return (
+    <section className="recent-gateways" aria-labelledby={id}>
+      <h2 id={id}>{title}</h2>
+      <ul>
+        {gateways.map((gateway) => (
+          <li key={gateway}>
+            <button type="button" className="recent-open" onClick={() => onOpen(gateway)}>
+              {gateway}
+            </button>
+            <button type="button" className="icon-button" aria-label={`Forget ${gateway}`} title="Forget, and remove its saved sign-in" onClick={() => onForget(gateway)}>
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 export function ConnectView({ session, state }: ConnectViewProps) {
@@ -61,23 +94,7 @@ export function ConnectView({ session, state }: ConnectViewProps) {
           </p>
         )}
       </form>
-      {recent.length > 0 && !signingIn && (
-        <section className="recent-gateways" aria-labelledby="recent-gateways-title">
-          <h2 id="recent-gateways-title">Recently used</h2>
-          <ul>
-            {recent.map((gateway) => (
-              <li key={gateway}>
-                <button type="button" className="recent-open" onClick={() => open(gateway)}>
-                  {gateway}
-                </button>
-                <button type="button" className="icon-button" aria-label={`Forget ${gateway}`} title="Forget, and remove its saved sign-in" onClick={() => void session.forgetGateway(gateway)}>
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {!signingIn && <RecentGateways title="Recently used" gateways={recent} onOpen={open} onForget={(gateway) => void session.forgetGateway(gateway)} />}
       <p className="independence">Unibot is independent: not made by, affiliated with or endorsed by Nous Research.</p>
     </main>
   );

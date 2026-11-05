@@ -321,6 +321,25 @@ export class Session {
 
   /** Forgets the sign-in on this computer and closes the connection. */
   async signOut(problem?: string): Promise<void> {
+    const auth = this.disconnect();
+    const address = auth?.gateway.baseUrl ?? this.recent[0] ?? "";
+    this.set({ kind: "signedOut", address, problem });
+    await auth?.signOut().catch(() => {});
+  }
+
+  /**
+   * Leaves this gateway, keeping its sign-in saved for next time, and signs in to the one at
+   * `address`: with its saved sign-in, or else through the browser.
+   */
+  async switchGateway(address: string): Promise<void> {
+    if (!this.deps || this.state.kind === "signingIn") return;
+    const current = this.disconnect();
+    this.set({ kind: "signedOut", address: current?.gateway.baseUrl ?? address });
+    await this.signIn(address);
+  }
+
+  /** Closes the connection and forgets this gateway's Bots, chats and rooms. */
+  private disconnect(): AuthSession | undefined {
     const auth = this.auth;
     this.auth = undefined;
     this.link?.abort();
@@ -335,9 +354,7 @@ export class Session {
     this.botApps.clear();
     this.routineLists.clear();
     this.roster = [];
-    const address = auth?.gateway.baseUrl ?? this.recent[0] ?? "";
-    this.set({ kind: "signedOut", address, problem });
-    await auth?.signOut().catch(() => {});
+    return auth;
   }
 
   /** Takes `address` off the recent list and removes the sign-in saved for it. */

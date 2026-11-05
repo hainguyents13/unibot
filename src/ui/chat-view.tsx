@@ -3,8 +3,6 @@ import type { Attachment } from "../hermes/attachments";
 import type { ChatThread } from "../hermes/chat-thread";
 import type { RoutineList } from "../hermes/routines";
 import type { BotScreen } from "../hermes/screen";
-import type { BotApps } from "../hermes/session";
-import { AppsPanel } from "./apps-panel";
 import { ConnectionCard } from "./connection-card";
 import { RoutinesPanel } from "./routines-panel";
 import { ScreenView } from "./screen-view";
@@ -18,12 +16,13 @@ interface ChatViewProps {
   thread: ChatThread;
   routines: RoutineList;
   screen: BotScreen;
-  apps: BotApps;
+  /** Opens this Bot's apps in Settings. */
+  openApps: () => void;
 }
 
-type Panel = "apps" | "routines" | "computer";
+type Panel = "routines" | "computer";
 
-export function ChatView({ bot, thread, routines, screen, apps }: ChatViewProps) {
+export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewProps) {
   const view = useSyncExternalStore(thread.subscribe, thread.getView);
   const screenView = useSyncExternalStore(screen.subscribe, screen.getView);
   const hasScreen = !!screenView.status?.supported && !!screenView.status.installed;
@@ -91,7 +90,7 @@ export function ChatView({ bot, thread, routines, screen, apps }: ChatViewProps)
               Computer
             </button>
           )}
-          <button type="button" aria-pressed={panel === "apps"} onClick={() => toggle("apps")}>
+          <button type="button" onClick={openApps}>
             Apps
           </button>
           <button type="button" aria-pressed={panel === "routines"} onClick={() => toggle("routines")}>
@@ -100,7 +99,6 @@ export function ChatView({ bot, thread, routines, screen, apps }: ChatViewProps)
         </div>
       </header>
       <div className="chat-main">
-      {panel === "apps" && <AppsPanel apps={apps} botName={bot.name} onClose={() => setPanel(undefined)} />}
       {panel === "routines" && <RoutinesPanel list={routines} botName={bot.name} onClose={() => setPanel(undefined)} />}
       {panel === "computer" && <ScreenView screen={screen} botName={bot.name} onClose={() => setPanel(undefined)} />}
       <div className="chat-scroll" ref={scroller} onScroll={onScroll}>
@@ -122,7 +120,7 @@ export function ChatView({ bot, thread, routines, screen, apps }: ChatViewProps)
         <RequestCards thread={thread} requests={view.requests} />
         {view.connection && (
           <div className="requests">
-            <ConnectionCard thread={thread} card={view.connection} botName={bot.name} online={view.canSend} openApps={() => setPanel("apps")} />
+            <ConnectionCard thread={thread} card={view.connection} botName={bot.name} online={view.canSend} openApps={openApps} />
           </div>
         )}
       </div>

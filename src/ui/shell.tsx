@@ -6,6 +6,7 @@ import { ContactList } from "./bot-list";
 import { NewRoomDialog } from "./new-room-dialog";
 import { ChatView } from "./chat-view";
 import { RoomView } from "./room-view";
+import { SettingsDialog, type SettingsPage } from "./settings-dialog";
 
 interface ShellProps {
   session: Session;
@@ -18,6 +19,7 @@ export function Shell({ session, state }: ShellProps) {
   const [selection, setSelection] = useState<Selection>();
   const [thread, setThread] = useState<ChatThread>();
   const [makingRoom, setMakingRoom] = useState(false);
+  const [settings, setSettings] = useState<SettingsPage>();
   const bot = selection?.kind === "bot" ? state.bots.find((b) => b.id === selection.id) : undefined;
   const room = selection?.kind === "room" ? session.room(selection.id) : undefined;
   const now = Date.now();
@@ -96,17 +98,23 @@ export function Shell({ session, state }: ShellProps) {
             onClose={() => setMakingRoom(false)}
           />
         )}
-        {!state.demo && (
-          <footer className="sidebar-footer">
-            <button type="button" onClick={() => void session.signOut()}>
-              Sign out
-            </button>
-          </footer>
-        )}
+        <footer className="sidebar-footer">
+          <button type="button" onClick={() => setSettings({ kind: "gateway" })}>
+            Settings
+          </button>
+        </footer>
+        {settings && <SettingsDialog session={session} state={state} page={settings} onPage={setSettings} onClose={() => setSettings(undefined)} />}
       </aside>
       <main className="chat">
         {bot && thread?.botId === bot.id ? (
-          <ChatView key={bot.id} bot={bot} thread={thread} routines={session.routines(bot.id)} screen={session.screen(bot.id)} apps={session.apps(bot.id)} />
+          <ChatView
+            key={bot.id}
+            bot={bot}
+            thread={thread}
+            routines={session.routines(bot.id)}
+            screen={session.screen(bot.id)}
+            openApps={() => setSettings({ kind: "apps", botId: bot.id })}
+          />
         ) : room ? (
           <RoomView
             key={room.id}

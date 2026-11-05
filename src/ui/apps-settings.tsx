@@ -9,14 +9,15 @@ import { openExternal } from "./open-external";
 type Screen = { kind: "list" } | { kind: "add" } | { kind: "preset"; preset: AppPreset } | { kind: "catalog"; entry: McpCatalogEntry } | { kind: "custom" };
 
 /**
- * A Bot's apps: the MCP servers its profile has on the gateway, and the apps connected through the
- * Nous Portal. Hermes holds every sign-in and key; this shows them and changes them.
+ * A Bot's apps, in Settings: the MCP servers its profile has on the gateway, and the apps connected
+ * through the Nous Portal. Hermes holds every sign-in and key; this shows them and changes them.
  */
-export function AppsPanel({ apps, botName, onClose }: { apps: BotApps; botName: string; onClose(): void }) {
+export function AppsSettings({ apps, botName }: { apps: BotApps; botName: string }) {
   const servers = useSyncExternalStore(apps.servers.subscribe, apps.servers.getView);
   const [screen, setScreen] = useState<Screen>({ kind: "list" });
 
   useEffect(() => {
+    setScreen({ kind: "list" });
     void apps.servers.refresh();
     void apps.connectors.refresh();
   }, [apps]);
@@ -27,19 +28,12 @@ export function AppsPanel({ apps, botName, onClose }: { apps: BotApps; botName: 
   };
 
   return (
-    <aside className="side-panel apps-panel" aria-label={`${botName}'s apps`}>
-      <header className="side-panel-header">
-        {screen.kind === "list" ? (
-          <h2>Apps</h2>
-        ) : (
-          <button type="button" className="link-button" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
-            ← {screen.kind === "add" ? "Apps" : "Add an app"}
-          </button>
-        )}
-        <button type="button" aria-label="Close apps" onClick={onClose}>
-          ×
+    <div className="apps-settings">
+      {screen.kind !== "list" && (
+        <button type="button" className="link-button" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
+          ← {screen.kind === "add" ? `${botName}'s apps` : "Add an app"}
         </button>
-      </header>
+      )}
       {servers.notice && (
         <p className="card-note" role="status">
           {servers.notice}
@@ -55,7 +49,7 @@ export function AppsPanel({ apps, botName, onClose }: { apps: BotApps; botName: 
       {screen.kind === "preset" && <PresetForm preset={screen.preset} list={apps.servers} onDone={() => setScreen({ kind: "list" })} />}
       {screen.kind === "catalog" && <CatalogForm entry={screen.entry} list={apps.servers} onDone={() => setScreen({ kind: "list" })} />}
       {screen.kind === "custom" && <CustomForm list={apps.servers} onDone={() => setScreen({ kind: "list" })} />}
-    </aside>
+    </div>
   );
 }
 

@@ -13,6 +13,8 @@ All notable changes to Unibot are listed here. The format follows
   you've used are listed on the sign-in screen, and one with a saved sign-in opens without the browser.
 - **Chat with each Bot** in its Bot Chat, with streaming replies, Markdown, tool calls folded into one
   line, Stop, and messages sent from another device filled in.
+- **Settings**: the gateway (switch to another, keeping each sign-in, or sign out) and each Bot's
+  apps, in one window with a page list.
 - **Approvals, questions and masked prompts** in the chat.
 - **Attachments**: pick, drop or paste images and files.
 - **Skills and commands** on `/`.

@@ -134,6 +134,28 @@ describe("Session", () => {
       await session.signOut();
     });
 
+    it("switches gateways, keeping the sign-in it leaves", async () => {
+      const { deps, store, recent } = setUp({ savedAddress: ADDRESS });
+      const other = GatewayAddress.parse(OTHER);
+      await store.save(gateway, { refreshToken: "refresh-0", provider: "password", userId: "u" });
+      await store.save(other, { refreshToken: "refresh-1", provider: "password", userId: "u" });
+      const openUrl = vi.spyOn(deps, "openUrl");
+      const session = Session.live(deps);
+      await session.restore();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(signedIn(session.getState()).gateway.baseUrl).toBe(ADDRESS);
+
+      await session.switchGateway(OTHER);
+      await vi.advanceTimersByTimeAsync(0);
+      const state = signedIn(session.getState());
+      expect(state.gateway.baseUrl).toBe(OTHER);
+      expect(state.link.kind).toBe("online");
+      expect(store.saved.has(gateway.baseUrl)).toBe(true);
+      expect(openUrl).not.toHaveBeenCalled();
+      expect(recent()).toEqual([OTHER, ADDRESS]);
+      await session.signOut();
+    });
+
     it("forgets a gateway and its saved sign-in", async () => {
       const { deps, store, recent } = setUp({ savedAddress: ADDRESS });
       const session = Session.live(deps);

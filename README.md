@@ -36,6 +36,8 @@ alone and needs no administrator rights. The installer isn't code-signed yet, so
 may warn the first time: choose **More info**, then **Run anyway**.
 
 Then enter your gateway's address and sign in on the gateway's page that opens in your browser.
+Unibot lists the gateways you've used on its sign-in screen, and **Settings** → Gateway switches
+between them without signing in again.
 
 ## What you'll need
 
@@ -50,8 +52,8 @@ Then enter your gateway's address and sign in on the gateway's page that opens i
 
 ## Connecting apps
 
-Apps live on your gateway, per Bot: Hermes runs them and keeps every token, key and sign-in. Open a
-Bot's chat and choose **Apps**.
+Apps live on your gateway, per Bot: Hermes runs them and keeps every token, key and sign-in. Open
+**Settings** at the bottom of the sidebar and pick a Bot under Apps, or choose **Apps** in its chat.
 
 - **GitHub**: Quick setup → GitHub, and paste a
   [personal access token](https://github.com/settings/personal-access-tokens/new). It uses GitHub's
