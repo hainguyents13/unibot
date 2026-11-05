@@ -80,6 +80,10 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
   it from the server's env. Composio on a real gateway hasn't been tried.
 - **Apply costs money.** `reload.mcp` (`confirm: true`, never `always`) drops the prompt cache, so
   the next reply resends the whole conversation. The panel says so.
+- **Recent gateways are a file, not `localStorage`** (`recent_gateways.rs`, in the app's config
+  folder). A development build's page is `localhost:1420` and the installed app's is
+  `tauri.localhost`, so the webview's storage isn't shared between them; Credential Manager and the
+  file are.
 - **Only the refresh token is saved.** Credential Manager caps a credential at 2,560 bytes; a
   restored sign-in refreshes before its first request.
 

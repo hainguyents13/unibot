@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GatewayAddress } from "./gateway-address";
 import { FakeSocket } from "./fake-socket";
 import type { Loopback } from "./native-sign-in";
-import { Session, type SessionDeps, type SessionState } from "./session";
+import { Session, withRecentGateway, type SessionDeps, type SessionState } from "./session";
 import { fakeHttp, json, MemoryTokenStore, tokenResponse } from "./test-support";
 
 const ADDRESS = "http://100.101.102.103:9119";
@@ -20,7 +20,7 @@ function setUp(options: { refresh?: () => ReturnType<typeof json>; savedAddress?
   });
   const sockets: FakeSocket[] = [];
   const store = new MemoryTokenStore();
-  let saved = options.savedAddress;
+  let recent = options.savedAddress ? [options.savedAddress] : [];
   let opened = "";
   const loopback: Loopback = {
     start: async () => 5000,
@@ -34,7 +34,12 @@ function setUp(options: { refresh?: () => ReturnType<typeof json>; savedAddress?
     openUrl: async (url) => {
       opened = url;
     },
-    settings: { gateway: () => saved, setGateway: (a) => (saved = a) },
+    settings: {
+      recentGateways: async () => recent,
+      saveRecentGateways: async (addresses) => {
+        recent = addresses;
+      },
+    },
     makeSocket: async () => {
       const socket = new FakeSocket();
       socket.reply = (frame) => {
@@ -59,7 +64,7 @@ function setUp(options: { refresh?: () => ReturnType<typeof json>; savedAddress?
       return socket;
     },
   };
-  return { deps, store, sockets, requests, savedAddress: () => saved };
+  return { deps, store, sockets, requests, savedAddress: () => recent[0], recent: () => recent };
 }
 
 function signedIn(state: SessionState) {
@@ -102,6 +107,46 @@ describe("Session", () => {
     expect(signedIn(session.getState()).link.kind).toBe("online");
     expect(requests.map((r) => new URL(r.url).pathname)).toEqual(["/auth/native/refresh", "/api/auth/ws-ticket"]);
     await session.signOut();
+  });
+
+  describe("recent gateways", () => {
+    const OTHER = "https://hermes.example.com";
+
+    it("lists the newest first, once each, and at most five", () => {
+      expect(withRecentGateway([OTHER, ADDRESS], ADDRESS)).toEqual([ADDRESS, OTHER]);
+      expect(withRecentGateway(["a", "b", "c", "d", "e"], "f")).toEqual(["f", "a", "b", "c", "d"]);
+    });
+
+    it("opens a gateway with its saved sign-in, without the browser", async () => {
+      const { deps, store, requests, recent } = setUp({ savedAddress: OTHER });
+      await store.save(gateway, { refreshToken: "refresh-0", provider: "password", userId: "u" });
+      const openUrl = vi.spyOn(deps, "openUrl");
+      const session = Session.live(deps);
+      await session.restore();
+      expect(session.recentGateways()).toEqual([OTHER]);
+
+      await session.signIn(ADDRESS);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(signedIn(session.getState()).link.kind).toBe("online");
+      expect(openUrl).not.toHaveBeenCalled();
+      expect(requests.map((r) => new URL(r.url).pathname)).not.toContain("/api/status");
+      expect(recent()).toEqual([ADDRESS, OTHER]);
+      await session.signOut();
+    });
+
+    it("forgets a gateway and its saved sign-in", async () => {
+      const { deps, store, recent } = setUp({ savedAddress: ADDRESS });
+      const session = Session.live(deps);
+      await session.restore();
+      await store.save(gateway, { refreshToken: "refresh-0", provider: "password", userId: "u" });
+      const before = session.getState();
+
+      await session.forgetGateway(ADDRESS);
+      expect(session.recentGateways()).toEqual([]);
+      expect(recent()).toEqual([]);
+      expect(store.saved.size).toBe(0);
+      expect(session.getState()).not.toBe(before);
+    });
   });
 
   it("asks for a gateway that offers app sign-in", async () => {

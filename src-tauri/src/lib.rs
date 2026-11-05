@@ -1,10 +1,13 @@
 mod desktop;
 mod loopback;
+mod recent_gateways;
 mod token_store;
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use loopback::Loopback;
+use tauri::Manager;
 
 /// Whether a debug build was started with `UNIBOT_DEMO=1`. Release builds never show the demo.
 fn demo_requested(debug_build: bool, flag: Option<&str>) -> bool {
@@ -54,6 +57,25 @@ fn token_delete(gateway: String) -> Result<(), String> {
     token_store::delete(&gateway)
 }
 
+fn recent_gateways_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_config_dir()
+        .map(|dir| dir.join("recent-gateways.json"))
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn gateways_load(app: tauri::AppHandle) -> Vec<String> {
+    recent_gateways_path(&app)
+        .map(|path| recent_gateways::load(&path))
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+fn gateways_save(app: tauri::AppHandle, gateways: Vec<String>) -> Result<(), String> {
+    recent_gateways::save(&recent_gateways_path(&app)?, &gateways)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -82,6 +104,8 @@ pub fn run() {
             token_load,
             token_save,
             token_delete,
+            gateways_load,
+            gateways_save,
             desktop::set_attention,
             desktop::notify
         ])

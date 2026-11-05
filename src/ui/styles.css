@@ -1293,6 +1293,57 @@ button:disabled {
   color: var(--needs-you);
 }
 
+.recent-gateways {
+  margin-top: 20px;
+}
+
+.recent-gateways h2 {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.recent-gateways ul {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  list-style: none;
+}
+
+.recent-gateways li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 6px;
+}
+
+.recent-gateways li + li {
+  border-top: 1px solid var(--border);
+}
+
+.recent-open {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-open:hover {
+  background: var(--row-hover);
+}
+
 .independence {
   margin-top: 24px;
   color: var(--text-muted);

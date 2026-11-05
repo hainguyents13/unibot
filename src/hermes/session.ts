@@ -42,8 +42,19 @@ export interface SessionDeps {
   tokenStore: TokenStore;
   loopback: Loopback;
   openUrl(url: string): Promise<void>;
-  /** The gateway address kept between launches. It isn't secret; the sign-in is in `tokenStore`. */
-  settings: { gateway(): string | undefined; setGateway(address: string): void };
+  /**
+   * The gateways signed in to from this computer, newest first, kept between launches. Addresses
+   * aren't secret; each one's sign-in is in `tokenStore`.
+   */
+  settings: { recentGateways(): Promise<string[]>; saveRecentGateways(addresses: string[]): Promise<void> };
+}
+
+/** How many gateways the sign-in screen lists. */
+export const RECENT_GATEWAYS = 5;
+
+/** `recent` with `address` moved to the front, without duplicates, at most `RECENT_GATEWAYS` long. */
+export function withRecentGateway(recent: string[], address: string): string[] {
+  return [address, ...recent.filter((a) => a !== address)].slice(0, RECENT_GATEWAYS);
 }
 
 /** How often the roster is read while connected. */
@@ -77,6 +88,7 @@ export class Session {
   private readonly botApps = new Map<string, BotApps>();
   /** The demo's pretend gateway for apps. */
   private demoApps: ReturnType<typeof demoAppsBackend> | undefined;
+  private recent: string[] = [];
 
   private constructor(
     private readonly deps: SessionDeps | undefined,
@@ -127,7 +139,8 @@ export class Session {
   async restore(): Promise<void> {
     const deps = this.deps;
     if (!deps || this.state.kind !== "restoring") return;
-    const address = deps.settings.gateway() ?? "";
+    this.recent = await deps.settings.recentGateways().catch(() => []);
+    const address = this.recent[0] ?? "";
     let gateway: GatewayAddress;
     try {
       gateway = GatewayAddress.parse(address);
@@ -143,7 +156,13 @@ export class Session {
     }
   }
 
-  /** Signs in to the gateway at `address` through the browser. */
+  /** The gateways signed in to from this computer, newest first. */
+  recentGateways = (): string[] => this.recent;
+
+  /**
+   * Signs in to the gateway at `address`: with the sign-in saved for it on this computer, or else
+   * through the browser.
+   */
   async signIn(address: string): Promise<void> {
     const deps = this.deps;
     if (!deps || this.state.kind === "signingIn" || this.state.kind === "signedIn") return;
@@ -155,11 +174,18 @@ export class Session {
     }
     this.set({ kind: "signingIn", gateway });
     try {
+      // A saved sign-in that has expired signs out with a reason, and the next try uses the browser.
+      const saved = await deps.tokenStore.load(gateway).catch(() => undefined);
+      if (this.getState().kind !== "signingIn") return;
+      if (saved) {
+        void this.rememberGateway(gateway.baseUrl);
+        return this.begin(new AuthSession(gateway, restoredTokens(saved), deps.tokenStore, deps.http));
+      }
       const status = await fetchStatus(gateway, deps.http);
       if (!supportsNativeSignIn(status)) throw new GatewayError("signInUnsupported");
       const tokens = await signInWithBrowser(gateway, deps);
       await deps.tokenStore.save(gateway, savedSignIn(tokens));
-      deps.settings.setGateway(gateway.baseUrl);
+      void this.rememberGateway(gateway.baseUrl);
       this.begin(new AuthSession(gateway, tokens, deps.tokenStore, deps.http));
     } catch (error) {
       // Read again: sign-out or a cancelled sign-in may have changed it while this waited.
@@ -309,9 +335,30 @@ export class Session {
     this.botApps.clear();
     this.routineLists.clear();
     this.roster = [];
-    const address = auth?.gateway.baseUrl ?? this.deps?.settings.gateway() ?? "";
+    const address = auth?.gateway.baseUrl ?? this.recent[0] ?? "";
     this.set({ kind: "signedOut", address, problem });
     await auth?.signOut().catch(() => {});
+  }
+
+  /** Takes `address` off the recent list and removes the sign-in saved for it. */
+  async forgetGateway(address: string): Promise<void> {
+    const deps = this.deps;
+    if (!deps) return;
+    this.recent = this.recent.filter((a) => a !== address);
+    // A new state object, so the sign-in screen reads the shorter list.
+    this.set({ ...this.state });
+    await deps.settings.saveRecentGateways(this.recent).catch(() => {});
+    try {
+      await deps.tokenStore.delete(GatewayAddress.parse(address));
+    } catch {
+      // An address saved by an older version that no longer parses has no sign-in to remove.
+    }
+  }
+
+  private async rememberGateway(address: string): Promise<void> {
+    this.recent = withRecentGateway(this.recent, address);
+    // Without the list, the address is typed again next launch; the sign-in itself is still saved.
+    await this.deps?.settings.saveRecentGateways(this.recent).catch(() => {});
   }
 
   /**

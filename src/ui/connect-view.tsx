@@ -9,10 +9,16 @@ interface ConnectViewProps {
 export function ConnectView({ session, state }: ConnectViewProps) {
   const [address, setAddress] = useState(state.kind === "signedOut" ? state.address : state.gateway.baseUrl);
   const signingIn = state.kind === "signingIn";
+  const recent = session.recentGateways();
 
   function submit(event: FormEvent) {
     event.preventDefault();
     void session.signIn(address);
+  }
+
+  function open(gateway: string) {
+    setAddress(gateway);
+    void session.signIn(gateway);
   }
 
   return (
@@ -55,6 +61,23 @@ export function ConnectView({ session, state }: ConnectViewProps) {
           </p>
         )}
       </form>
+      {recent.length > 0 && !signingIn && (
+        <section className="recent-gateways" aria-labelledby="recent-gateways-title">
+          <h2 id="recent-gateways-title">Recently used</h2>
+          <ul>
+            {recent.map((gateway) => (
+              <li key={gateway}>
+                <button type="button" className="recent-open" onClick={() => open(gateway)}>
+                  {gateway}
+                </button>
+                <button type="button" className="icon-button" aria-label={`Forget ${gateway}`} title="Forget, and remove its saved sign-in" onClick={() => void session.forgetGateway(gateway)}>
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <p className="independence">Unibot is independent: not made by, affiliated with or endorsed by Nous Research.</p>
     </main>
   );

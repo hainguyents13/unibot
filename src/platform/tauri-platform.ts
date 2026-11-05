@@ -116,23 +116,26 @@ const loopback: Loopback = {
   cancel: () => invoke<void>("loopback_cancel"),
 };
 
-const GATEWAY_KEY = "unibot.gateway";
+/** Where versions before the recent list kept the one gateway's address. */
+const LEGACY_GATEWAY_KEY = "unibot.gateway";
 
-/** The last gateway's address isn't secret, so it lives in the webview's storage. */
+/**
+ * The recent gateways live in a file in the app's config folder, not the webview's storage: a
+ * development build's page has another origin than the installed app's, so it would see none.
+ */
 const settings: SessionDeps["settings"] = {
-  gateway() {
+  async recentGateways() {
+    const recent = await invoke<string[]>("gateways_load");
+    if (recent.length) return recent;
     try {
-      return localStorage.getItem(GATEWAY_KEY) ?? undefined;
+      const legacy = localStorage.getItem(LEGACY_GATEWAY_KEY);
+      return legacy ? [legacy] : [];
     } catch {
-      return undefined;
+      return [];
     }
   },
-  setGateway(address) {
-    try {
-      localStorage.setItem(GATEWAY_KEY, address);
-    } catch {
-      // Without storage the address is typed again next launch; the sign-in itself is still saved.
-    }
+  async saveRecentGateways(addresses) {
+    await invoke("gateways_save", { gateways: addresses });
   },
 };
 

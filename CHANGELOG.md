@@ -9,7 +9,8 @@ All notable changes to Unibot are listed here. The format follows
 ### Added
 
 - **Sign in to your Hermes gateway** through its sign-in page in your browser. The sign-in is kept in
-  Windows Credential Manager, and Unibot reconnects by itself when the connection drops.
+  Windows Credential Manager, and Unibot reconnects by itself when the connection drops. Gateways
+  you've used are listed on the sign-in screen, and one with a saved sign-in opens without the browser.
 - **Chat with each Bot** in its Bot Chat, with streaming replies, Markdown, tool calls folded into one
   line, Stop, and messages sent from another device filled in.
 - **Approvals, questions and masked prompts** in the chat.
