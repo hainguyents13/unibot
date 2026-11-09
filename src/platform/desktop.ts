@@ -16,6 +16,12 @@ export function setAttention(needsYou: boolean): void {
   invoke("set_attention", { needsYou }).catch(() => {});
 }
 
+/** Matches the window's title bar to the app's theme; `undefined` follows Windows. */
+export function setWindowTheme(theme: "light" | "dark" | undefined): void {
+  if (!isTauri()) return;
+  void import("@tauri-apps/api/window").then(({ getCurrentWindow }) => getCurrentWindow().setTheme(theme ?? null)).catch(() => {});
+}
+
 /** Calls `open` with the target of a clicked notification. Returns a way to stop listening. */
 export function onOpenTarget(open: (target: string) => void): () => void {
   if (!isTauri()) return () => {};

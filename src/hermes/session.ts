@@ -10,7 +10,12 @@ import { fetchStatus, signInWithBrowser, supportsNativeSignIn, type Loopback } f
 import { chatRequestFrom } from "./requests";
 import { refName, splitAttachments } from "./attachments";
 import { createRoom, RoomThread, roomSummaryFrom, type RoomSummary } from "./room";
-import { botsFromProfiles, plainPreview } from "./roster";
+import { botsFromProfiles, friendlyName, plainPreview } from "./roster";
+import { BotSettings } from "./bot-settings";
+import { botSlug, createBot, duplicateBot, type MadeBot } from "./bot-profiles";
+import { demoBotSettingsBackend } from "./demo-bot-settings";
+import { emptyDemoChat } from "./demo-chats";
+import { fileName } from "./reply-files";
 import { RoutineList } from "./routines";
 import { BotScreen } from "./screen";
 import type { Bot, RoomEntry } from "./types";
@@ -47,6 +52,8 @@ export interface SessionDeps {
    * aren't secret; each one's sign-in is in `tokenStore`.
    */
   settings: { recentGateways(): Promise<string[]>; saveRecentGateways(addresses: string[]): Promise<void> };
+  /** Saving a gateway file in Downloads (returning where it went), and showing it in its folder. */
+  files?: { save(url: string, bearer: string, name: string): Promise<string>; reveal(path: string): Promise<void> };
 }
 
 /** How many gateways the sign-in screen lists. */
@@ -86,6 +93,9 @@ export class Session {
   /** Each Bot's computer, made when its chat is first shown. */
   private readonly screens = new Map<string, BotScreen>();
   private readonly botApps = new Map<string, BotApps>();
+  private readonly settingsOfBots = new Map<string, BotSettings>();
+  /** The demo's pretend gateway for Bot settings. */
+  private demoSettings: ReturnType<typeof demoBotSettingsBackend> | undefined;
   /** The demo's pretend gateway for apps. */
   private demoApps: ReturnType<typeof demoAppsBackend> | undefined;
   private recent: string[] = [];
@@ -256,6 +266,11 @@ export class Session {
   /** The routines of `botId`'s profile. Call `refresh()` to load them. */
   routines(botId: string): RoutineList {
     let list = this.routineLists.get(botId);
+    if (!list && this.state.kind === "signedIn" && this.state.demo) {
+      // A demo Bot without made-up routines has none, rather than a list that never loads.
+      list = RoutineList.demo(botId, []);
+      this.routineLists.set(botId, list);
+    }
     if (!list) {
       const auth = this.auth;
       list = new RoutineList(
@@ -286,6 +301,98 @@ export class Session {
     };
     this.botApps.set(botId, apps);
     return apps;
+  }
+
+  /** `botId`'s own settings: name, description, rules, model and thinking. Call `load()` to read them. */
+  botSettings(botId: string): BotSettings {
+    let settings = this.settingsOfBots.get(botId);
+    if (settings) return settings;
+    const demo =
+      this.state.kind === "signedIn" && this.state.demo ? (this.demoSettings ??= demoBotSettingsBackend((id) => this.roster.find((b) => b.id === id))) : undefined;
+    settings = new BotSettings(
+      botId,
+      () => demo ?? this.channel,
+      () => (demo ? undefined : this.threads.get(botId)?.sessionId),
+      // The sidebar shows the new name now; the next roster read confirms it.
+      (saved) => {
+        this.roster = this.roster.map((bot) => (bot.id === botId ? { ...bot, name: saved.title || friendlyName(botId), about: saved.description } : bot));
+        this.publishBots();
+      },
+    );
+    this.settingsOfBots.set(botId, settings);
+    return settings;
+  }
+
+  /**
+   * Saves the file at `path` on the gateway, as `profile` sees it, in this computer's Downloads
+   * folder, and returns where it went. Goes through `/api/fs/download`, which has no size cap.
+   */
+  async downloadFile(profile: string, path: string): Promise<string> {
+    const files = this.deps?.files;
+    const auth = this.auth;
+    if (!files || !auth) throw new GatewayError("rpc", "The demo has no files to download.");
+    const query = new URLSearchParams({ path, profile });
+    return files.save(auth.gateway.url(`/api/fs/download?${query}`), await auth.accessToken(), fileName(path));
+  }
+
+  /** Shows a downloaded file in its folder. */
+  revealFile(localPath: string): Promise<void> {
+    return this.deps?.files?.reveal(localPath) ?? Promise.resolve();
+  }
+
+  /** Makes a new Bot called `title` and lists it at once. */
+  createBot(title: string, description: string): Promise<MadeBot> {
+    return this.makeBot(title, description, (rpc) => createBot(rpc, title, description));
+  }
+
+  /** Makes a copy of `sourceId` called `title`, with its config, keys, rules and skills. */
+  duplicateBot(sourceId: string, title: string): Promise<MadeBot> {
+    const description = this.roster.find((b) => b.id === sourceId)?.about ?? "";
+    return this.makeBot(title, description, (rpc) => duplicateBot(rpc, sourceId, title, description));
+  }
+
+  private async makeBot(title: string, description: string, make: (rpc: JsonRpcChannel) => Promise<MadeBot>): Promise<MadeBot> {
+    if (this.state.kind === "signedIn" && this.state.demo) {
+      const id = botSlug(title);
+      this.roster = [{ id, name: title.trim(), about: description.trim(), preview: "", lastActivity: Date.now(), status: "idle" }, ...this.roster];
+      this.adopt(emptyDemoChat(id));
+      this.publishBots();
+      return { id, canReply: true };
+    }
+    const channel = this.channel;
+    if (!channel) throw new GatewayError("disconnected");
+    const made = await make(channel);
+    await this.reloadRoster(channel);
+    return made;
+  }
+
+  /**
+   * Deletes `botId`'s profile and everything in its folder: chats, memory, skills, routines and
+   * keys. Hermes stops the Bot first. Only the dashboard's REST route deletes; the socket has no
+   * method for it. Rooms keep the Bot listed, since Hermes freezes a room's members.
+   */
+  async deleteBot(botId: string): Promise<void> {
+    if (botId === "default") throw new GatewayError("rpc", "The gateway's main Bot can't be deleted.");
+    if (!(this.state.kind === "signedIn" && this.state.demo)) {
+      const auth = this.auth;
+      if (!auth) throw new GatewayError("disconnected");
+      await auth.json(`/api/profiles/${encodeURIComponent(botId)}`, { method: "DELETE", timeoutMs: 60_000 });
+    }
+    this.threads.delete(botId);
+    this.routineLists.delete(botId);
+    this.screens.delete(botId);
+    this.botApps.delete(botId);
+    this.settingsOfBots.delete(botId);
+    this.roster = this.roster.filter((b) => b.id !== botId);
+    this.publishBots();
+    if (this.channel) await this.reloadRoster(this.channel).catch(() => {});
+  }
+
+  /** Reads the roster now rather than at the next tick, after a Bot was made or deleted. */
+  private async reloadRoster(channel: JsonRpcChannel): Promise<void> {
+    this.roster = botsFromProfiles(await channel.call("profiles.list", { include_sessions: true }));
+    this.publishBots();
+    if (this.dialect) this.attachChats(this.dialect);
   }
 
   /** `botId`'s computer. Call `refresh()` to learn whether it has one. */
@@ -352,6 +459,7 @@ export class Session {
     this.roomUpdated.clear();
     this.screens.clear();
     this.botApps.clear();
+    this.settingsOfBots.clear();
     this.routineLists.clear();
     this.roster = [];
     return auth;

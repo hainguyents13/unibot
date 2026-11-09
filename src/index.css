@@ -2,76 +2,103 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+/*
+ * Dark follows Windows unless Settings → Appearance picks Light or Dark (`data-theme` on <html>,
+ * appearance.ts). Every colour is `light-dark(light, dark)`, so one list serves both, and Tailwind's
+ * `dark:` variant follows the same choice.
+ */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+}
 
-/* shadcn/ui's theme, in Unibot's warm greys. Dark follows Windows's setting. */
+/* shadcn/ui's theme, in Unibot's warm greys ("Stone"). */
 :root {
   color-scheme: light dark;
   --radius: 0.5rem;
-  --background: #ffffff;
-  --foreground: #1c1917;
-  --card: #ffffff;
-  --card-foreground: #1c1917;
-  --popover: #ffffff;
-  --popover-foreground: #1c1917;
-  --primary: #1c1917;
-  --primary-foreground: #ffffff;
-  --secondary: #f5f5f4;
-  --secondary-foreground: #1c1917;
-  --muted: #f5f5f4;
-  --muted-foreground: #78716c;
-  --accent: #ecebea;
-  --accent-foreground: #1c1917;
-  --destructive: #b91c1c;
-  --border: #e7e5e4;
-  --input: #d6d3d1;
-  --ring: #a8a29e;
-  --sidebar: #f5f5f4;
-  --sidebar-foreground: #1c1917;
-  --sidebar-primary: #1c1917;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ecebea;
-  --sidebar-accent-foreground: #1c1917;
-  --sidebar-border: #e7e5e4;
-  --sidebar-ring: #a8a29e;
-  --attention: #c2410c;
-  --attention-soft: #ffedd5;
-  --working: #1d4ed8;
-  --working-soft: #dbeafe;
+  --background: light-dark(#ffffff, #1c1b1a);
+  --foreground: light-dark(#1c1917, #f5f5f4);
+  --card: light-dark(#ffffff, #232221);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(#1c1917, #f5f5f4);
+  --primary-foreground: light-dark(#ffffff, #1c1917);
+  --secondary: light-dark(#f5f5f4, #2e2d2b);
+  --secondary-foreground: var(--foreground);
+  --muted: light-dark(#f5f5f4, #2e2d2b);
+  --muted-foreground: light-dark(#78716c, #a8a29e);
+  --accent: light-dark(#ecebea, #2e2d2b);
+  --accent-foreground: var(--foreground);
+  --destructive: light-dark(#b91c1c, #dc2626);
+  --border: light-dark(#e7e5e4, #3a3836);
+  --input: light-dark(#d6d3d1, #44403c);
+  --ring: light-dark(#a8a29e, #78716c);
+  --sidebar: light-dark(#f5f5f4, #242322);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --attention: light-dark(#c2410c, #fdba74);
+  --attention-soft: light-dark(#ffedd5, #431407);
+  --working: light-dark(#1d4ed8, #93c5fd);
+  --working-soft: light-dark(#dbeafe, #172554);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1c1b1a;
-    --foreground: #f5f5f4;
-    --card: #232221;
-    --card-foreground: #f5f5f4;
-    --popover: #232221;
-    --popover-foreground: #f5f5f4;
-    --primary: #f5f5f4;
-    --primary-foreground: #1c1917;
-    --secondary: #2e2d2b;
-    --secondary-foreground: #f5f5f4;
-    --muted: #2e2d2b;
-    --muted-foreground: #a8a29e;
-    --accent: #2e2d2b;
-    --accent-foreground: #f5f5f4;
-    --destructive: #dc2626;
-    --border: #3a3836;
-    --input: #44403c;
-    --ring: #78716c;
-    --sidebar: #242322;
-    --sidebar-foreground: #f5f5f4;
-    --sidebar-primary: #f5f5f4;
-    --sidebar-primary-foreground: #1c1917;
-    --sidebar-accent: #2e2d2b;
-    --sidebar-accent-foreground: #f5f5f4;
-    --sidebar-border: #3a3836;
-    --sidebar-ring: #78716c;
-    --attention: #fdba74;
-    --attention-soft: #431407;
-    --working: #93c5fd;
-    --working-soft: #172554;
-  }
+/* Colour themes. Slate is cooler greys; the others tint buttons, your messages and selections. */
+:root[data-palette="slate"] {
+  --background: light-dark(#ffffff, #0f172a);
+  --foreground: light-dark(#0f172a, #f1f5f9);
+  --card: light-dark(#ffffff, #162033);
+  --primary: light-dark(#0f172a, #f1f5f9);
+  --primary-foreground: light-dark(#ffffff, #0f172a);
+  --secondary: light-dark(#f1f5f9, #1e293b);
+  --muted: light-dark(#f1f5f9, #1e293b);
+  --muted-foreground: light-dark(#64748b, #94a3b8);
+  --accent: light-dark(#e2e8f0, #1e293b);
+  --border: light-dark(#e2e8f0, #334155);
+  --input: light-dark(#cbd5e1, #475569);
+  --ring: light-dark(#94a3b8, #64748b);
+  --sidebar: light-dark(#f8fafc, #131c2e);
+}
+:root[data-palette="blue"] {
+  --primary: light-dark(#2563eb, #60a5fa);
+  --primary-foreground: light-dark(#ffffff, #0b1530);
+  --secondary: light-dark(#e0ecff, #1e2f57);
+  --accent: light-dark(#e3ebfa, #26334d);
+  --ring: light-dark(#93c5fd, #3b82f6);
+  --sidebar: light-dark(#f4f7fd, #1f2229);
+}
+:root[data-palette="green"] {
+  --primary: light-dark(#059669, #34d399);
+  --primary-foreground: light-dark(#ffffff, #032b20);
+  --secondary: light-dark(#dcf5ea, #123d30);
+  --accent: light-dark(#e2f2ea, #22352e);
+  --ring: light-dark(#6ee7b7, #10b981);
+  --sidebar: light-dark(#f3f9f6, #1e2421);
+}
+:root[data-palette="violet"] {
+  --primary: light-dark(#7c3aed, #a78bfa);
+  --primary-foreground: light-dark(#ffffff, #1d1035);
+  --secondary: light-dark(#ede5ff, #34245a);
+  --accent: light-dark(#eee8fb, #2f2840);
+  --ring: light-dark(#c4b5fd, #8b5cf6);
+  --sidebar: light-dark(#f7f5fd, #23212b);
 }
 
 @theme inline {
@@ -117,7 +144,9 @@
     @apply border-border outline-ring/50;
   }
   html {
-    font-size: 14px;
+    font-size: 15px;
+    /* Messages and the message box; Settings → Appearance changes it (appearance.ts). */
+    --chat-text: 16px;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;

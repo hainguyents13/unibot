@@ -1,46 +1,32 @@
-import { useEffect, useState, useSyncExternalStore, type DragEvent } from "react";
-import { CalendarClock, Monitor, Puzzle, Upload } from "lucide-react";
+import { useState, useSyncExternalStore, type DragEvent } from "react";
+import { PanelRight, Puzzle, Upload } from "lucide-react";
 import { ChatContainerContent, ChatContainerRoot } from "@/components/ui/chat-container";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import type { Attachment } from "../hermes/attachments";
 import type { ChatThread } from "../hermes/chat-thread";
-import type { RoutineList } from "../hermes/routines";
-import type { BotScreen } from "../hermes/screen";
 import type { Bot } from "../hermes/types";
 import { ChatHeader, HeaderTool } from "./chat-header";
 import { Composer } from "./composer";
 import { ConnectionCard } from "./connection-card";
 import { RequestCards } from "./request-cards";
-import { RoutinesPanel } from "./routines-panel";
-import { ScreenView } from "./screen-view";
 import { Note, Problem } from "./settings-parts";
 import { TranscriptView } from "./transcript-view";
 
 interface ChatViewProps {
   bot: Bot;
   thread: ChatThread;
-  routines: RoutineList;
-  screen: BotScreen;
   /** Opens this Bot's apps in Settings. */
   openApps: () => void;
+  /** Whether the panel with its settings, routines and computer is open, and a way to flip it. */
+  panelOpen: boolean;
+  onTogglePanel: () => void;
 }
 
-type Panel = "routines" | "computer";
-
-export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewProps) {
+export function ChatView({ bot, thread, openApps, panelOpen, onTogglePanel }: ChatViewProps) {
   const view = useSyncExternalStore(thread.subscribe, thread.getView);
-  const screenView = useSyncExternalStore(screen.subscribe, screen.getView);
-  const hasScreen = !!screenView.status?.supported && !!screenView.status.installed;
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [panel, setPanel] = useState<Panel>();
   const [dragging, setDragging] = useState(false);
-  const toggle = (next: Panel) => setPanel(panel === next ? undefined : next);
   const canAttach = view.canSend && !view.isRunning && !view.isUploading;
-
-  // Whether the Bot has a computer to show; asked again when the chat reconnects.
-  useEffect(() => {
-    void screen.refresh();
-  }, [screen, view.canSend]);
 
   async function attach(files: FileList | File[]) {
     const read = await Promise.all(
@@ -72,13 +58,10 @@ export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewPr
       onDrop={onDrop}
     >
       <ChatHeader title={bot.name} subtitle={bot.about}>
-        {hasScreen && <HeaderTool icon={<Monitor />} label="Computer" pressed={panel === "computer"} onClick={() => toggle("computer")} />}
         <HeaderTool icon={<Puzzle />} label="Apps" onClick={openApps} />
-        <HeaderTool icon={<CalendarClock />} label="Routines" pressed={panel === "routines"} onClick={() => toggle("routines")} />
+        <HeaderTool icon={<PanelRight />} label="Details" pressed={panelOpen} onClick={onTogglePanel} />
       </ChatHeader>
       <div className="relative flex min-h-0 flex-1 flex-col">
-        {panel === "routines" && <RoutinesPanel list={routines} botName={bot.name} onClose={() => setPanel(undefined)} />}
-        {panel === "computer" && <ScreenView screen={screen} botName={bot.name} onClose={() => setPanel(undefined)} />}
         {/* Follows the newest message while you're at the bottom, and leaves you be when you scrolled up. */}
         <ChatContainerRoot className={dragging ? "min-h-0 flex-1 opacity-40" : "min-h-0 flex-1"}>
           <ChatContainerContent className="gap-4 px-5 py-5">
@@ -92,7 +75,7 @@ export function ChatView({ bot, thread, routines, screen, openApps }: ChatViewPr
             {view.phase.kind === "ready" && view.items.length === 0 && !view.isRunning && (
               <Note className="m-auto">No messages yet. Say hello to {bot.name}.</Note>
             )}
-            <TranscriptView items={view.items} draft={view.draft} isRunning={view.isRunning} />
+            <TranscriptView items={view.items} draft={view.draft} isRunning={view.isRunning} profile={bot.id} />
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
               <RequestCards thread={thread} requests={view.requests} />
               {view.connection && <ConnectionCard thread={thread} card={view.connection} botName={bot.name} online={view.canSend} openApps={openApps} />}

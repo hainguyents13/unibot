@@ -14,7 +14,8 @@ export function Markdown({ text, className }: { text: string; className?: string
   return (
     <div
       className={cn(
-        "prose prose-sm max-w-none text-foreground dark:prose-invert",
+        // Sized by `--chat-text`; prose spaces everything in `em`, so it all follows.
+        "prose max-w-none text-(length:--chat-text) leading-relaxed text-foreground dark:prose-invert",
         "prose-p:my-1.5 prose-headings:mt-4 prose-headings:mb-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-table:my-2",
         "prose-a:text-working prose-a:no-underline hover:prose-a:underline",
         "prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:font-normal prose-code:before:content-none prose-code:after:content-none",

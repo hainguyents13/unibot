@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { scheduleInWords, type RoutineList } from "../hermes/routines";
 import { Note, Panel, Problem } from "./settings-parts";
-import { SidePanel } from "./side-panel";
 
 const when = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
 
 /** A Bot's scheduled jobs: what each does when, a switch to pause it, and Run now. */
-export function RoutinesPanel({ list, botName, onClose }: { list: RoutineList; botName: string; onClose(): void }) {
+export function RoutinesList({ list, botName }: { list: RoutineList; botName: string }) {
   const view = useSyncExternalStore(list.subscribe, list.getView);
 
   useEffect(() => {
@@ -17,7 +16,7 @@ export function RoutinesPanel({ list, botName, onClose }: { list: RoutineList; b
   }, [list]);
 
   return (
-    <SidePanel title="Routines" label={`${botName}'s routines`} onClose={onClose}>
+    <div className="flex flex-col gap-3">
       {view.phase.kind === "loading" && <Note>Loading…</Note>}
       {view.phase.kind === "failed" && <Problem>{view.phase.message}</Problem>}
       {view.problem && <Problem>{view.problem}</Problem>}
@@ -26,7 +25,7 @@ export function RoutinesPanel({ list, botName, onClose }: { list: RoutineList; b
           {botName} has no routines. Set them up in the Hermes app or ask {botName} in the chat.
         </Note>
       )}
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-2" aria-label={`${botName}'s routines`}>
         {view.routines.map((routine) => {
           const running = view.running.includes(routine.id);
           const outcome = view.outcomes[routine.id];
@@ -60,6 +59,6 @@ export function RoutinesPanel({ list, botName, onClose }: { list: RoutineList; b
           );
         })}
       </ul>
-    </SidePanel>
+    </div>
   );
 }

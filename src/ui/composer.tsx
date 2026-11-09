@@ -93,10 +93,11 @@ export function Composer({ thread, view, botName, attachments, onAttach, onRemov
       : `Message ${botName}, or type / for skills and commands`;
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl px-4 pb-4">
+    // As wide as the messages above it: their column, plus the same 1.25rem each side.
+    <div className="relative mx-auto w-full max-w-[calc(var(--container-3xl)+2.5rem)] px-5 pb-4">
       {matches.length > 0 && (
         <ul
-          className="absolute right-4 bottom-full left-4 mb-2 max-h-72 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg"
+          className="absolute right-5 bottom-full left-5 mb-2 max-h-72 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg"
           role="listbox"
           id="slash-menu"
           aria-label="Skills and commands"
@@ -157,7 +158,7 @@ export function Composer({ thread, view, botName, attachments, onAttach, onRemov
         )}
         <PromptInputTextarea
           id={boxId}
-          className="min-h-10 px-2 text-sm"
+          className="min-h-10 px-2 text-(length:--chat-text) md:text-(length:--chat-text)"
           onKeyDown={onKeyDown}
           onPaste={(e) => {
             const files = [...e.clipboardData.files];

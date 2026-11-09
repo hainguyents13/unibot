@@ -78,7 +78,13 @@ export function RoomView({ room, bots, rename, remove }: RoomViewProps) {
           {view.phase.kind === "ready" && view.items.length === 0 && view.pending.length === 0 && (
             <Note className="m-auto">No messages yet. A message goes to every Bot here; {handles} asks one.</Note>
           )}
-          <TranscriptView items={view.items} draft="" isRunning={false} memberName={memberName} />
+          <TranscriptView
+            items={view.items}
+            draft=""
+            isRunning={false}
+            memberName={memberName}
+            memberProfile={(id) => view.members.find((m) => m.id === id)?.profile}
+          />
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
             {view.pending.length > 0 && (
               <ol className="flex flex-col items-end gap-2" aria-label="Sending">

@@ -87,10 +87,33 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
   `tauri.localhost`, so the webview's storage isn't shared between them; Credential Manager and the
   file are.
 - **Check what `shadcn add` writes.** It has imported `cn` from an unrelated npm package named
-  `cn` (and installed it) instead of `@/lib/utils`, and added `@custom-variant dark` to
-  `src/index.css`, which makes dark mode follow a `.dark` class instead of Windows's setting. Undo
-  both after each run. prompt-kit's Markdown and Tool aren't used: replies render with markdown-it,
+  `cn` (and installed it) instead of `@/lib/utils`, and added `@custom-variant dark (&:is(.dark *))`
+  to `src/index.css`, which would replace Unibot's own `dark` variant (Windows's setting, or the
+  `data-theme` Settings → Appearance sets). Undo both after each run. prompt-kit's Markdown and Tool aren't used: replies render with markdown-it,
   and tool calls fold into one line.
+- **A Bot's settings are the official Bots editor's calls** (`bot-settings.ts`): `profiles.describe`
+  reads them; `profiles.configure` writes description, `soul` (SOUL.md) and `model` + `provider`; the
+  name is `ui_meta['hermes-bots'].title`, written back whole with its revision, as Usual Bot does.
+  Thinking is the profile's `agent.reasoning_effort` (`config.set` with `scope: global` and
+  `profile`; without `profile` it changes the gateway's main profile). A running Bot Chat keeps the
+  model it started with, so Save also switches it (`config.set … --session`). A pricier model answers
+  `confirm_required` and writes no model, but the same call already wrote the other sections. None of
+  this has run against a real gateway yet.
+- **Making a Bot is the official app's New Bot** (`bot-profiles.ts`): `profiles.create` with the
+  slugged name (`botSlug`, the desktop's `slugifyProfileName`), `share_auth`, a starting SOUL.md, then
+  the title; `setup.runtime_check` says whether it can reply, without a model call. Duplicate is
+  `clone_from`, which copies config, keys, SOUL.md and skills but strips messaging channels. Delete is
+  REST only (`DELETE /api/profiles/{name}`), and `default` can't go. Hermes has no way to add a Bot to
+  a room that exists, so the menu starts a new room with it. None of this has run on a real gateway.
+- **Bots in Unibot's chats think they're in a terminal.** Sessions Unibot opens carry no `source`, so
+  Hermes gives the Bot its `tui` hint: no attachment channel, state a file's path. The `desktop` hint
+  would bring `MEDIA:` lines but also `::preview` widgets Unibot can't show. So `reply-files.ts`
+  offers both `MEDIA:` lines and absolute paths written in a reply (not in code blocks), as Usual Bot
+  does. Download is `GET /api/fs/download?path&profile` (no size cap), saved by Rust's
+  `save_download` from a raw body, never overwriting. Not yet run against a real gateway.
+- **Theme colours are `light-dark()`**, so `index.css` lists each once; `color-scheme` on `<html>`
+  picks the side, and `data-theme`/`data-palette` (appearance.ts) override it. Keep the `dark`
+  custom variant in step with that, or `dark:` classes (prose-invert) disagree with the colours.
 - **Only the refresh token is saved.** Credential Manager caps a credential at 2,560 bytes; a
   restored sign-in refreshes before its first request.
 

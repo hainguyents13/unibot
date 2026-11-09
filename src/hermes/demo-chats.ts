@@ -15,6 +15,11 @@ const DEMO_COMMANDS: SlashCommand[] = [
   { name: "/usage", description: "Show token usage for this chat", kind: "command" },
 ];
 
+/** A demo Bot's chat with nothing in it yet, for a Bot made in the demo. */
+export function emptyDemoChat(id: string): ChatThread {
+  return ChatThread.demo(id, Transcript.fromHistory([], false), [], playReply, DEMO_COMMANDS);
+}
+
 /**
  * The demo's chats: Forge waits on an approval, Ops is in the middle of a reply, Atlas has a
  * Markdown answer. What you send gets a scripted reply; nothing reaches a gateway.
@@ -79,6 +84,12 @@ export function demoChats(nowMs: number = Date.now()): ChatThread[] {
     chat("scribe", [
       { role: "user", text: "Two headline options for the launch post?", timestamp: at(100) },
       { role: "assistant", text: "1. *Your Bots, on Windows*\n2. *A messenger for Hermes*", timestamp: at(95) },
+      { role: "user", text: "Make a short teaser clip and the post as a file.", timestamp: at(70) },
+      {
+        role: "assistant",
+        text: "Both are ready. The clip is 12 s at 720p.\n\nMEDIA:/opt/data/profiles/scribe/out/launch-teaser.mp4\n\nThe post is in `/opt/data/profiles/scribe/out/launch-post.md`.",
+        timestamp: at(62),
+      },
     ]),
     ledger(at),
   ];

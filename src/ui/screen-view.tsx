@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BotScreen } from "../hermes/screen";
 
 /**
- * A Bot's computer over the chat: its screen live, Take over and Hand back. Closing the view closes
- * the picture cleanly, which hands control back to the Bot if you had it.
+ * A Bot's computer: its screen live, Take over and Hand back. It fills the box it's put in. Leaving
+ * the view closes the picture cleanly, which hands control back to the Bot if you had it.
  */
-export function ScreenView({ screen, botName, onClose }: { screen: BotScreen; botName: string; onClose(): void }) {
+export function ScreenView({ screen, botName }: { screen: BotScreen; botName: string }) {
   const view = useSyncExternalStore(screen.subscribe, screen.getView);
   const canvas = useRef<HTMLDivElement>(null);
   const rfb = useRef<{ viewOnly: boolean; disconnect(): void; focus(): void } | null>(null);
@@ -97,9 +96,6 @@ export function ScreenView({ screen, botName, onClose }: { screen: BotScreen; bo
               Hand back
             </Button>
           )}
-          <Button type="button" variant="ghost" size="icon" className="size-8 text-stone-300 hover:bg-stone-800 hover:text-stone-100" aria-label="Close the computer" onClick={onClose}>
-            <X aria-hidden />
-          </Button>
         </div>
       </header>
       {view.lease?.reason && view.control === "agent" && (

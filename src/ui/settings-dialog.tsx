@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Blocks, Bot as BotIcon, LogOut, Server } from "lucide-react";
+import { Blocks, Bot as BotIcon, LogOut, Palette, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,11 @@ import { describeError } from "../hermes/gateway-error";
 import type { Link, Session, SessionState } from "../hermes/session";
 import { AppsSettings } from "./apps-settings";
 import { ComposioSettings } from "./composio-settings";
+import { AppearanceSettings } from "./appearance-settings";
 import { RecentGateways } from "./connect-view";
 import { Note, PageTitle, Panel, Problem, SectionTitle } from "./settings-parts";
 
-export type SettingsPage = { kind: "gateway" } | { kind: "composio" } | { kind: "apps"; botId: string };
+export type SettingsPage = { kind: "gateway" } | { kind: "appearance" } | { kind: "composio" } | { kind: "apps"; botId: string };
 
 interface SettingsDialogProps {
   session: Session;
@@ -31,7 +32,7 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
       <DialogContent className="flex h-[min(640px,calc(100vh-3rem))] w-[min(880px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-none">
         <header className="flex items-center border-b px-5 py-3.5">
           <DialogTitle className="text-base">Settings</DialogTitle>
-          <DialogDescription className="sr-only">The gateway, Composio, and each Bot's apps.</DialogDescription>
+          <DialogDescription className="sr-only">The gateway, how chats look, Composio, and each Bot's apps.</DialogDescription>
         </header>
         <div className="flex min-h-0 flex-1 max-sm:flex-col">
           <nav
@@ -40,6 +41,9 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
           >
             <NavItem icon={<Server />} current={page.kind === "gateway"} onClick={() => onPage({ kind: "gateway" })}>
               Gateway
+            </NavItem>
+            <NavItem icon={<Palette />} current={page.kind === "appearance"} onClick={() => onPage({ kind: "appearance" })}>
+              Appearance
             </NavItem>
             <NavItem icon={<Blocks />} current={page.kind === "composio"} onClick={() => onPage({ kind: "composio" })}>
               Composio
@@ -54,6 +58,7 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
           </nav>
           <section className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5 max-sm:px-4">
             {page.kind === "gateway" && <GatewaySettings session={session} state={state} />}
+            {page.kind === "appearance" && <AppearanceSettings />}
             {page.kind === "composio" && <ComposioSettings session={session} bots={state.bots} />}
             {page.kind === "apps" &&
               (bot ? (

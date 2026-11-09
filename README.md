@@ -15,10 +15,19 @@ tells you when a Bot replies or needs you.
 - **Answer what Bots ask** right in the chat: allow a command once, for this chat or always, or deny
   it; answer their questions; send a secret or a sudo password in a masked field.
 - **Send files**: pick, drop or paste them. Images go to the Bot to look at, other files to its workspace.
+- **Get files back**: a file a Bot made shows under its reply with **Download**, which saves it in
+  your Downloads folder.
 - **Skills and commands** on `/`, such as a Bot's skills or Hermes's `/status`.
 - **Rooms**: start one with **+** beside Rooms and pick two to six Bots. A message goes to every Bot
   in the room, and `@name` asks one. Approve, retry or stop their turns, and rename or delete the room.
+- **Set up each Bot**: **Details** in its chat, or ⋯ → Settings in the sidebar, opens a panel with its
+  name, role and rules (its SOUL.md), its provider, model and thinking level, its routines and its
+  computer. A model that costs more asks first, and a provider without a key takes one there.
 - **Routines**: see each Bot's scheduled jobs in plain words, pause or resume them, and run one now.
+- **Make Bots**: **+** beside Bots makes one from a name and what it's for. ⋯ on a Bot starts a room
+  with it, duplicates it, or deletes it.
+- **Appearance**: light, dark or like Windows, a colour theme, and how big chats read, in
+  **Settings** → Appearance.
 - **Apps**: give a Bot tools from other services. Add GitHub, Plane or Composio in a few steps, anything from
   Hermes's catalog (Linear, Notion, Dropbox and more), or your own MCP server; sign in on the
   provider's page where it asks, test it, and apply it to the open chat. Gateways with a Nous Portal

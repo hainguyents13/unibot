@@ -1,6 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { fetch } from "@tauri-apps/plugin-http";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import type { SavedSignIn, TokenStore } from "../hermes/auth-session";
 import type { GatewayAddress } from "../hermes/gateway-address";
 import { GatewayError } from "../hermes/gateway-error";
@@ -32,7 +32,29 @@ const http: HttpTransport = async (request) => {
   }
 };
 
-type PluginMessage = { type: "Text"; data: string } | { type: "Close" | "Binary" | "Ping" | "Pong"; data: unknown } | string;
+/**
+ * Downloads a gateway file and saves it in Downloads. The bytes go to Rust as the raw body of
+ * `save_download`, not as JSON; a file over the gateway's error statuses keeps its words.
+ */
+const files: NonNullable<SessionDeps["files"]> = {
+  async save(url, bearer, name) {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${bearer}`, Origin: "" },
+      // A big video takes a while; the connection itself shouldn't.
+      signal: AbortSignal.timeout(10 * 60_000),
+      connectTimeout: 15_000,
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new GatewayError("http", detail.match(/"detail"\s*:\s*"([^"]+)"/)?.[1], response.status);
+    }
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    return invoke<string>("save_download", bytes, { headers: { "x-file-name": encodeURIComponent(name) } });
+  },
+  reveal: (path) => revealItemInDir(path),
+};
+
+type PluginMessage ={ type: "Text"; data: string } | { type: "Close" | "Binary" | "Ping" | "Pong"; data: unknown } | string;
 
 /**
  * A WebSocket through Tauri's WebSocket plugin, called directly rather than through its JS wrapper:
@@ -139,4 +161,4 @@ const settings: SessionDeps["settings"] = {
   },
 };
 
-export const tauriSessionDeps: SessionDeps = { http, makeSocket, tokenStore, loopback, openUrl, settings };
+export const tauriSessionDeps: SessionDeps = { http, makeSocket, tokenStore, loopback, openUrl, settings, files };

@@ -5,6 +5,8 @@ import { DotsLoader } from "@/components/ui/loader";
 import { Message, MessageContent } from "@/components/ui/message";
 import { cn } from "@/lib/utils";
 import { refName, splitAttachments } from "../hermes/attachments";
+import { replyFiles } from "../hermes/reply-files";
+import { ReplyFileCards } from "./reply-file-cards";
 import type { ToolStep, TranscriptItem } from "../hermes/transcript";
 import { Markdown } from "./markdown";
 
@@ -14,23 +16,30 @@ interface TranscriptViewProps {
   isRunning: boolean;
   /** Rooms: the name a member's replies show. */
   memberName?: (memberId: string) => string;
+  /** The Hermes profile whose files a reply hands over: the chat's Bot, or a room member's. */
+  profile?: string;
+  memberProfile?: (memberId: string) => string | undefined;
 }
 
-export function TranscriptView({ items, draft, isRunning, memberName }: TranscriptViewProps) {
+export function TranscriptView({ items, draft, isRunning, memberName, profile, memberProfile }: TranscriptViewProps) {
   return (
     <ol className="mx-auto flex w-full max-w-3xl flex-col gap-4" aria-label="Messages">
       {items.map((item) =>
         item.content.kind === "member" ? (
           <li key={item.id}>
-            <BotMessage name={memberName?.(item.content.memberId) ?? item.content.memberId} text={item.content.text} />
+            <BotMessage
+              name={memberName?.(item.content.memberId) ?? item.content.memberId}
+              text={item.content.text}
+              profile={memberProfile?.(item.content.memberId)}
+            />
           </li>
         ) : (
-          <Item key={item.id} item={item} />
+          <Item key={item.id} item={item} profile={profile} />
         ),
       )}
       {draft && (
         <li aria-live="polite">
-          <BotMessage text={draft} />
+          <BotMessage text={draft} profile={profile} />
         </li>
       )}
       {isRunning && !draft && (
@@ -44,7 +53,7 @@ export function TranscriptView({ items, draft, isRunning, memberName }: Transcri
 }
 
 /** Items are replaced, never changed, so one that didn't move doesn't render again. */
-const Item = memo(function Item({ item }: { item: TranscriptItem }) {
+const Item = memo(function Item({ item, profile }: { item: TranscriptItem; profile?: string }) {
   const { content } = item;
   switch (content.kind) {
     case "user":
@@ -62,7 +71,7 @@ const Item = memo(function Item({ item }: { item: TranscriptItem }) {
     case "assistant":
       return (
         <li>
-          <BotMessage text={content.text} />
+          <BotMessage text={content.text} profile={profile} />
         </li>
       );
     case "activity":
@@ -85,12 +94,15 @@ const Item = memo(function Item({ item }: { item: TranscriptItem }) {
   }
 });
 
-function BotMessage({ text, name }: { text: string; name?: string }) {
+function BotMessage({ text, name, profile }: { text: string; name?: string; profile?: string }) {
+  const reply = replyFiles(text);
   return (
     <Message className="flex-col gap-1">
       {name && <span className="text-xs font-semibold text-muted-foreground">{name}</span>}
-      <MessageContent className="bg-transparent p-0">
-        <Markdown text={text} />
+      {/* MessageContent is `prose`, which stops at 65 characters; a reply takes most of the column instead. */}
+      <MessageContent className="max-w-[80%] bg-transparent p-0">
+        {reply.text && <Markdown text={reply.text} />}
+        <ReplyFileCards profile={profile} files={reply.files} />
       </MessageContent>
     </Message>
   );
@@ -102,7 +114,7 @@ function UserMessage({ text }: { text: string }) {
   return (
     <Message className="flex-col items-end gap-1.5">
       {body && (
-        <MessageContent className="max-w-[80%] rounded-2xl rounded-br-md bg-secondary px-3.5 py-2 text-sm whitespace-pre-wrap">{body}</MessageContent>
+        <MessageContent className="max-w-[80%] rounded-2xl rounded-br-md bg-secondary px-3.5 py-2 text-(length:--chat-text) leading-relaxed whitespace-pre-wrap">{body}</MessageContent>
       )}
       {attachments.length > 0 && (
         <ul className="flex flex-wrap justify-end gap-1.5" aria-label="Attachments">

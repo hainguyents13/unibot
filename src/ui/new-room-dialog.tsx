@@ -15,13 +15,15 @@ interface NewRoomDialogProps {
   /** Told the new room's ID, to open it. */
   onCreated: (roomId: string) => void;
   onClose: () => void;
+  /** Bots already ticked, such as the one whose menu started the room. */
+  picked?: string[];
 }
 
 /** Starts a room: the Bots in it and a name, which defaults to theirs. */
-export function NewRoomDialog({ bots, create, onCreated, onClose }: NewRoomDialogProps) {
+export function NewRoomDialog({ bots, create, onCreated, onClose, picked: initiallyPicked = [] }: NewRoomDialogProps) {
   const [name, setName] = useState("");
   /** Picked Bots, in the order you picked them; the room lists them that way. */
-  const [picked, setPicked] = useState<string[]>([]);
+  const [picked, setPicked] = useState<string[]>(initiallyPicked);
 
   const pickedBots = picked.flatMap((id) => bots.find((b) => b.id === id) ?? []);
   const suggestion = suggestedRoomName(pickedBots.map((b) => b.name));

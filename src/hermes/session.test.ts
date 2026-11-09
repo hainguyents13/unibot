@@ -484,3 +484,28 @@ describe("Session", () => {
     expect(sockets[0].closed).toBe(true);
   });
 });
+
+describe("Bots made and deleted in the demo", () => {
+  const scribe = { id: "scribe", name: "Scribe", about: "Writes", preview: "", lastActivity: 1, status: "idle" as const };
+  const ids = (session: Session) => {
+    const state = session.getState();
+    return state.kind === "signedIn" ? state.bots.map((b) => b.id) : [];
+  };
+
+  it("lists a new Bot at once, with an empty chat, and drops a deleted one", async () => {
+    const session = Session.demo("hermes.example.com", [scribe], []);
+    const made = await session.createBot("Job Scout", "Finds jobs");
+    expect(made).toEqual({ id: "job-scout", canReply: true });
+    expect(ids(session)).toEqual(["job-scout", "scribe"]);
+    expect(session.chat("job-scout").getView().phase.kind).toBe("ready");
+
+    await session.deleteBot("job-scout");
+    expect(ids(session)).toEqual(["scribe"]);
+  });
+
+  it("never deletes the gateway's main Bot", async () => {
+    const session = Session.demo("hermes.example.com", [{ ...scribe, id: "default" }], []);
+    await expect(session.deleteBot("default")).rejects.toThrow();
+    expect(ids(session)).toEqual(["default"]);
+  });
+});
