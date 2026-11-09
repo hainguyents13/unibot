@@ -1,4 +1,5 @@
 mod desktop;
+mod downloads;
 mod loopback;
 mod recent_gateways;
 mod token_store;
@@ -76,6 +77,28 @@ fn gateways_save(app: tauri::AppHandle, gateways: Vec<String>) -> Result<(), Str
     recent_gateways::save(&recent_gateways_path(&app)?, &gateways)
 }
 
+/// Saves a file from the gateway into the Downloads folder and returns where it went. The bytes come
+/// as the raw request body, so a big file isn't turned into JSON; the name rides in a header,
+/// percent-encoded.
+#[tauri::command]
+fn save_download(
+    app: tauri::AppHandle,
+    request: tauri::ipc::Request<'_>,
+) -> Result<String, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("The file didn't arrive.".into());
+    };
+    let name = request
+        .headers()
+        .get("x-file-name")
+        .and_then(|value| value.to_str().ok())
+        .map(downloads::percent_decode)
+        .unwrap_or_default();
+    let folder = app.path().download_dir().map_err(|e| e.to_string())?;
+    let saved = downloads::save_new(&folder, &name, bytes).map_err(|e| e.to_string())?;
+    Ok(saved.display().to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -106,6 +129,7 @@ pub fn run() {
             token_delete,
             gateways_load,
             gateways_save,
+            save_download,
             desktop::set_attention,
             desktop::notify
         ])
