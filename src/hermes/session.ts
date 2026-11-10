@@ -15,6 +15,7 @@ import { BotSettings } from "./bot-settings";
 import { botSlug, createBot, duplicateBot, type MadeBot } from "./bot-profiles";
 import { demoBotSettingsBackend } from "./demo-bot-settings";
 import { emptyDemoChat } from "./demo-chats";
+import { demoMedia } from "./demo-media";
 import { fileName } from "./reply-files";
 import { RoutineList } from "./routines";
 import { BotScreen } from "./screen";
@@ -52,8 +53,12 @@ export interface SessionDeps {
    * aren't secret; each one's sign-in is in `tokenStore`.
    */
   settings: { recentGateways(): Promise<string[]>; saveRecentGateways(addresses: string[]): Promise<void> };
-  /** Saving a gateway file in Downloads (returning where it went), and showing it in its folder. */
-  files?: { save(url: string, bearer: string, name: string): Promise<string>; reveal(path: string): Promise<void> };
+  /** Reading a gateway file, saving bytes in Downloads (returning where they went), and showing a saved file. */
+  files?: {
+    fetch(url: string, bearer: string): Promise<Uint8Array>;
+    save(bytes: Uint8Array, name: string): Promise<string>;
+    reveal(path: string): Promise<void>;
+  };
 }
 
 /** How many gateways the sign-in screen lists. */
@@ -324,15 +329,27 @@ export class Session {
   }
 
   /**
-   * Saves the file at `path` on the gateway, as `profile` sees it, in this computer's Downloads
-   * folder, and returns where it went. Goes through `/api/fs/download`, which has no size cap.
+   * The file at `path` on the gateway, as `profile` sees it, whole. Goes through `/api/fs/download`,
+   * which has no size cap. The demo has made-up media for its own paths.
    */
-  async downloadFile(profile: string, path: string): Promise<string> {
+  async readFile(profile: string, path: string): Promise<Uint8Array> {
+    if (this.state.kind === "signedIn" && this.state.demo) {
+      const made = await demoMedia(path);
+      if (!made) throw new GatewayError("rpc", "The demo has no copy of this file.");
+      return made;
+    }
     const files = this.deps?.files;
     const auth = this.auth;
-    if (!files || !auth) throw new GatewayError("rpc", "The demo has no files to download.");
+    if (!files || !auth) throw new GatewayError("disconnected");
     const query = new URLSearchParams({ path, profile });
-    return files.save(auth.gateway.url(`/api/fs/download?${query}`), await auth.accessToken(), fileName(path));
+    return files.fetch(auth.gateway.url(`/api/fs/download?${query}`), await auth.accessToken());
+  }
+
+  /** Saves `bytes` as `name` in this computer's Downloads folder; returns where they went. */
+  saveFile(bytes: Uint8Array, name: string): Promise<string> {
+    const files = this.deps?.files;
+    if (!files) return Promise.reject(new GatewayError("rpc", "The demo can't save files. The app can."));
+    return files.save(bytes, fileName(name));
   }
 
   /** Shows a downloaded file in its folder. */

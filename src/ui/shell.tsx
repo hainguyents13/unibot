@@ -43,7 +43,11 @@ export function Shell({ session, state }: ShellProps) {
   const botIds = state.bots.map((b) => b.id);
   const now = Date.now();
   const gatewayFiles = useMemo<GatewayFiles>(
-    () => ({ download: (profile, path) => session.downloadFile(profile, path), reveal: (local) => session.revealFile(local) }),
+    () => ({
+      read: (profile, path) => session.readFile(profile, path),
+      save: (bytes, name) => session.saveFile(bytes, name),
+      reveal: (local) => session.revealFile(local),
+    }),
     [session],
   );
 

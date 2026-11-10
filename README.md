@@ -16,7 +16,7 @@ tells you when a Bot replies or needs you.
   it; answer their questions; send a secret or a sudo password in a masked field.
 - **Send files**: pick, drop or paste them. Images go to the Bot to look at, other files to its workspace.
 - **Get files back**: a file a Bot made shows under its reply with **Download**, which saves it in
-  your Downloads folder.
+  your Downloads folder. Images show right there, and video and audio play with **Play**.
 - **Skills and commands** on `/`, such as a Bot's skills or Hermes's `/status`.
 - **Rooms**: start one with **+** beside Rooms and pick two to six Bots. A message goes to every Bot
   in the room, and `@name` asks one. Approve, retry or stop their turns, and rename or delete the room.

@@ -16,7 +16,8 @@ All notable changes to Unibot are listed here. The format follows
   that costs more asks first; a provider without a key takes one there. Saving switches the open
   chat too.
 - **Download what a Bot makes**: a file a reply hands over (a `MEDIA:` line, or a path the Bot
-  writes out) shows as a card with **Download**, which saves it in your Downloads folder.
+  writes out) shows as a card with **Download**, which saves it in your Downloads folder. Images
+  show in the chat, and video and audio play there with **Play**.
 - **Make, copy and delete Bots**: **+** beside Bots makes one from a name and what it's for; ⋯ on a
   Bot opens its settings, starts a room with it, duplicates it or deletes it.
 - **Appearance** in Settings: light, dark or like Windows, five colour themes, and the size of text

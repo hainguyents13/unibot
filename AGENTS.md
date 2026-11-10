@@ -109,8 +109,11 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
   Hermes gives the Bot its `tui` hint: no attachment channel, state a file's path. The `desktop` hint
   would bring `MEDIA:` lines but also `::preview` widgets Unibot can't show. So `reply-files.ts`
   offers both `MEDIA:` lines and absolute paths written in a reply (not in code blocks), as Usual Bot
-  does. Download is `GET /api/fs/download?path&profile` (no size cap), saved by Rust's
-  `save_download` from a raw body, never overwriting. Not yet run against a real gateway.
+  does. Files come whole from `GET /api/fs/download?path&profile` (no size cap) through the HTTP
+  plugin, since `<video src>` can't carry the bearer token; they play from a `blob:` URL, which
+  works only while `csp` stays `null`. Images load at once; video and audio wait for Play, as a
+  long clip is held in memory. Saving is Rust's `save_download` from a raw body, never
+  overwriting. Not yet run against a real gateway.
 - **Theme colours are `light-dark()`**, so `index.css` lists each once; `color-scheme` on `<html>`
   picks the side, and `data-theme`/`data-palette` (appearance.ts) override it. Keep the `dark`
   custom variant in step with that, or `dark:` classes (prose-invert) disagree with the colours.

@@ -87,7 +87,15 @@ export function demoChats(nowMs: number = Date.now()): ChatThread[] {
       { role: "user", text: "Make a short teaser clip and the post as a file.", timestamp: at(70) },
       {
         role: "assistant",
-        text: "Both are ready. The clip is 12 s at 720p.\n\nMEDIA:/opt/data/profiles/scribe/out/launch-teaser.mp4\n\nThe post is in `/opt/data/profiles/scribe/out/launch-post.md`.",
+        text: [
+          "All ready: the teaser, the sign-up chart for the post, and the voice-over.",
+          "",
+          "MEDIA:/opt/data/profiles/scribe/out/launch-teaser.webm",
+          "MEDIA:/opt/data/profiles/scribe/out/signups-chart.svg",
+          "MEDIA:/opt/data/profiles/scribe/out/voice-over.wav",
+          "",
+          "The post is in `/opt/data/profiles/scribe/out/launch-post.md`.",
+        ].join("\n"),
         timestamp: at(62),
       },
     ]),

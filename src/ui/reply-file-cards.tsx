@@ -1,32 +1,34 @@
-import { createContext, useContext, useState } from "react";
-import { Download, File, FileArchive, FileAudio, FileImage, FileText, FileVideo, FolderOpen, Loader2 } from "lucide-react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Download, File, FileArchive, FileAudio, FileImage, FileText, FileVideo, FolderOpen, Loader2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { describeError } from "../hermes/gateway-error";
-import { fileName } from "../hermes/reply-files";
+import { fileName, mediaOf } from "../hermes/reply-files";
 
-/** Saving the files Bots hand over, given by the shell so every transcript can. */
+/** Reading and saving the files Bots hand over, given by the shell so every transcript can. */
 export interface GatewayFiles {
-  /** Saves `path` on the gateway, as `profile` sees it, in Downloads; returns where it went. */
-  download(profile: string, path: string): Promise<string>;
+  /** The file at `path` on the gateway, as `profile` sees it, whole. */
+  read(profile: string, path: string): Promise<Uint8Array>;
+  /** Saves `bytes` in Downloads as `name`; returns where they went. */
+  save(bytes: Uint8Array, name: string): Promise<string>;
   reveal(localPath: string): Promise<void>;
 }
 
 export const GatewayFilesContext = createContext<GatewayFiles | undefined>(undefined);
 
-const KINDS: Array<{ pattern: RegExp; icon: typeof File }> = [
+const ICONS: Array<{ pattern: RegExp; icon: typeof File }> = [
   { pattern: /\.(png|jpe?g|gif|webp|bmp|svg|heic|avif)$/i, icon: FileImage },
   { pattern: /\.(mp4|mov|webm|mkv|avi|m4v)$/i, icon: FileVideo },
-  { pattern: /\.(mp3|wav|ogg|m4a|flac|aac|opus)$/i, icon: FileAudio },
+  { pattern: /\.(mp3|wav|ogg|oga|m4a|flac|aac|opus)$/i, icon: FileAudio },
   { pattern: /\.(zip|tar|gz|tgz|7z|rar|xz)$/i, icon: FileArchive },
   { pattern: /\.(pdf|txt|md|csv|json|docx?|xlsx?|pptx?|html?)$/i, icon: FileText },
 ];
 
-/** The files a reply hands over, each with Download. */
+/** The files a reply hands over: images shown, video and audio playable, and each with Download. */
 export function ReplyFileCards({ profile, files }: { profile: string | undefined; files: string[] }) {
   if (!profile || files.length === 0) return null;
   return (
     // `not-prose`: replies are typeset as prose, which would give this list bullets and spacing.
-    <ul className="not-prose mt-2 flex flex-col gap-1.5" aria-label="Files">
+    <ul className="not-prose mt-2 flex flex-col gap-2" aria-label="Files">
       {files.map((path) => (
         <li key={path}>
           <FileCard profile={profile} path={path} />
@@ -36,51 +38,104 @@ export function ReplyFileCards({ profile, files }: { profile: string | undefined
   );
 }
 
-type Saving = { kind: "idle" } | { kind: "saving" } | { kind: "saved"; localPath: string } | { kind: "failed"; message: string };
+type Status =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "saving" }
+  | { kind: "saved"; localPath: string }
+  | { kind: "failed"; message: string };
 
 function FileCard({ profile, path }: { profile: string; path: string }) {
   const files = useContext(GatewayFilesContext);
-  const [saving, setSaving] = useState<Saving>({ kind: "idle" });
-  const Icon = KINDS.find((kind) => kind.pattern.test(path))?.icon ?? File;
+  const media = mediaOf(path);
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  /** Where the loaded file plays or shows from; set once its bytes are here. */
+  const [url, setUrl] = useState<string>();
+  /** Kept so Download after Play saves what's already here instead of fetching it again. */
+  const bytes = useRef<Uint8Array>(undefined);
+  const Icon = ICONS.find((kind) => kind.pattern.test(path))?.icon ?? File;
 
-  async function download() {
-    if (!files) return;
-    setSaving({ kind: "saving" });
+  async function load(): Promise<Uint8Array> {
+    if (!files) throw new Error("Files aren't available here.");
+    bytes.current ??= await files.read(profile, path);
+    return bytes.current;
+  }
+
+  async function play() {
+    setStatus({ kind: "loading" });
     try {
-      setSaving({ kind: "saved", localPath: await files.download(profile, path) });
+      const loaded = await load();
+      setUrl(URL.createObjectURL(new Blob([loaded as BlobPart], { type: media?.type })));
+      setStatus({ kind: "idle" });
     } catch (error) {
-      setSaving({ kind: "failed", message: describeError(error) });
+      setStatus({ kind: "failed", message: describeError(error) });
     }
   }
 
+  async function download() {
+    if (!files) return;
+    setStatus({ kind: "saving" });
+    try {
+      setStatus({ kind: "saved", localPath: await files.save(await load(), fileName(path)) });
+    } catch (error) {
+      setStatus({ kind: "failed", message: describeError(error) });
+    }
+  }
+
+  // Images are small and are the point of the reply, so they show without a click.
+  useEffect(() => {
+    if (media?.kind === "image") void play();
+    // Once per card: a card is one file, and `play` reads what it needs itself.
+  }, []);
+
+  // The bytes stay in memory while the URL lives, so it goes with the card.
+  useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url]);
+
+  const busy = status.kind === "loading" || status.kind === "saving";
+  const line =
+    status.kind === "saved"
+      ? `Saved to ${status.localPath}`
+      : status.kind === "failed"
+        ? status.message
+        : status.kind === "loading"
+          ? "Loading…"
+          : status.kind === "saving"
+            ? "Downloading…"
+            : "On the gateway";
+
   return (
-    <div className="flex max-w-md items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm">
-      <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium" title={path}>
-          {fileName(path)}
-        </p>
-        <p className="truncate text-xs text-muted-foreground" role={saving.kind === "failed" ? "alert" : "status"}>
-          {saving.kind === "saved"
-            ? `Saved to ${saving.localPath}`
-            : saving.kind === "failed"
-              ? saving.message
-              : saving.kind === "saving"
-                ? "Downloading…"
-                : "On the gateway"}
-        </p>
+    <div className="flex max-w-xl flex-col gap-2 rounded-lg border bg-card p-2 text-sm">
+      {url && media?.kind === "image" && <img src={url} alt={fileName(path)} className="max-h-80 w-fit max-w-full rounded-md object-contain" />}
+      {url && media?.kind === "video" && <video src={url} controls autoPlay className="max-h-[420px] w-full rounded-md bg-black" aria-label={fileName(path)} />}
+      {url && media?.kind === "audio" && <audio src={url} controls autoPlay className="w-full" aria-label={fileName(path)} />}
+      <div className="flex items-center gap-3 px-1">
+        <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium" title={path}>
+            {fileName(path)}
+          </p>
+          <p className="truncate text-xs text-muted-foreground" role={status.kind === "failed" ? "alert" : "status"}>
+            {line}
+          </p>
+        </div>
+        {(media?.kind === "video" || media?.kind === "audio") && !url && (
+          <Button type="button" variant="outline" size="sm" disabled={!files || busy} onClick={() => void play()}>
+            {status.kind === "loading" ? <Loader2 className="animate-spin" aria-hidden /> : <Play aria-hidden />}
+            Play
+          </Button>
+        )}
+        {status.kind === "saved" ? (
+          <Button type="button" variant="outline" size="sm" onClick={() => void files?.reveal(status.localPath)}>
+            <FolderOpen aria-hidden />
+            Show
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" size="sm" disabled={!files || busy} onClick={() => void download()}>
+            {status.kind === "saving" ? <Loader2 className="animate-spin" aria-hidden /> : <Download aria-hidden />}
+            Download
+          </Button>
+        )}
       </div>
-      {saving.kind === "saved" ? (
-        <Button type="button" variant="outline" size="sm" onClick={() => void files?.reveal(saving.localPath)}>
-          <FolderOpen aria-hidden />
-          Show
-        </Button>
-      ) : (
-        <Button type="button" variant="outline" size="sm" disabled={!files || saving.kind === "saving"} onClick={() => void download()}>
-          {saving.kind === "saving" ? <Loader2 className="animate-spin" aria-hidden /> : <Download aria-hidden />}
-          {saving.kind === "failed" ? "Try again" : "Download"}
-        </Button>
-      )}
     </div>
   );
 }

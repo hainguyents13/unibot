@@ -50,6 +50,38 @@ export function replyFiles(reply: string): ReplyFiles {
   return { text: kept.join("\n").replace(/\n{3,}/g, "\n\n").trim(), files };
 }
 
+const MEDIA: Record<string, { kind: "image" | "video" | "audio"; type: string }> = {
+  png: { kind: "image", type: "image/png" },
+  jpg: { kind: "image", type: "image/jpeg" },
+  jpeg: { kind: "image", type: "image/jpeg" },
+  gif: { kind: "image", type: "image/gif" },
+  webp: { kind: "image", type: "image/webp" },
+  bmp: { kind: "image", type: "image/bmp" },
+  svg: { kind: "image", type: "image/svg+xml" },
+  avif: { kind: "image", type: "image/avif" },
+  mp4: { kind: "video", type: "video/mp4" },
+  m4v: { kind: "video", type: "video/mp4" },
+  mov: { kind: "video", type: "video/quicktime" },
+  webm: { kind: "video", type: "video/webm" },
+  mp3: { kind: "audio", type: "audio/mpeg" },
+  m4a: { kind: "audio", type: "audio/mp4" },
+  aac: { kind: "audio", type: "audio/aac" },
+  wav: { kind: "audio", type: "audio/wav" },
+  ogg: { kind: "audio", type: "audio/ogg" },
+  oga: { kind: "audio", type: "audio/ogg" },
+  opus: { kind: "audio", type: "audio/ogg" },
+  flac: { kind: "audio", type: "audio/flac" },
+};
+
+/**
+ * Whether the file shows in the chat (an image) or plays there (video, audio), and the type to
+ * give its bytes so the webview can. Only formats the webview plays; others stay download-only.
+ */
+export function mediaOf(path: string): { kind: "image" | "video" | "audio"; type: string } | undefined {
+  const extension = /\.([A-Za-z0-9]+)$/.exec(path)?.[1]?.toLowerCase();
+  return extension ? MEDIA[extension] : undefined;
+}
+
 /** The file's own name, from its path. */
 export function fileName(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;

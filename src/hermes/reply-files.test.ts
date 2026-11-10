@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fileName, replyFiles } from "./reply-files";
+import { fileName, mediaOf, replyFiles } from "./reply-files";
 
 describe("files in a reply", () => {
   it("takes MEDIA lines out of the text and offers their files", () => {
@@ -40,6 +40,14 @@ describe("files in a reply", () => {
 
   it("offers each file once", () => {
     expect(replyFiles("MEDIA:/a/b.txt\nAlso /a/b.txt here.").files).toEqual(["/a/b.txt"]);
+  });
+
+  it("knows which files show or play in the chat", () => {
+    expect(mediaOf("/out/clip.MP4")).toEqual({ kind: "video", type: "video/mp4" });
+    expect(mediaOf("/out/memo.m4a")).toEqual({ kind: "audio", type: "audio/mp4" });
+    expect(mediaOf("/out/chart.svg")).toEqual({ kind: "image", type: "image/svg+xml" });
+    expect(mediaOf("/out/report.pdf")).toBeUndefined();
+    expect(mediaOf("/out/movie.mkv")).toBeUndefined();
   });
 
   it("names a file by its last part", () => {
