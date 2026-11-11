@@ -48,11 +48,11 @@ export function ModalDialog({ title, action, perform, failure, onClose, children
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           {/* What's inside can't be changed while the work runs. */}
-          <div className="flex min-h-0 flex-col gap-3" inert={busy}>
+          <div className="flex min-h-0 flex-col gap-3 transition-opacity duration-150" inert={busy} style={{ opacity: busy ? 0.6 : 1 }}>
             {children}
           </div>
           {problem && (
-            <p className="text-sm text-destructive" role="alert">
+            <p className="text-[13px] text-red" role="alert">
               {problem}
             </p>
           )}

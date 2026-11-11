@@ -8,9 +8,15 @@ All notable changes to Unibot are listed here. The format follows
 
 ### Added
 
-- **A new look**, built on shadcn/ui and prompt-kit: a calmer sidebar, message bubbles, a message box
-  with Send, Stop and Attach buttons, a button to jump to the newest message, and dialogs and
-  Settings in one style.
+- **A new look, built on Beautiful UI**: its cool greys, hairline cards, Inter type and smooth
+  motion throughout. A highlight glides between rows in the sidebar, menus and Settings; menus and
+  dialogs pop in; new messages rise into place; the Bot shows a pixel loader with a timer while it
+  works; tool calls fold into chips you can open; questions from a Bot come one at a time in a
+  card; routines are capsules that open to their details; and the message box, its `/` menu and
+  attachments come from its prompt bar.
+- **A sidebar that folds** to a rail of avatars (with a dot for a Bot that's working or waits on
+  you), groups for Bots and rooms that fold, a search that finds them by name, and the gateway's
+  menu at the top.
 - **A panel beside each Bot's chat** (**Details**, or ⋯ → Settings in the sidebar): its name, role and
   rules (SOUL.md), its provider, model and thinking level, its routines, and its computer. A model
   that costs more asks first; a provider without a key takes one there. Saving switches the open
@@ -20,8 +26,8 @@ All notable changes to Unibot are listed here. The format follows
   show in the chat, and video and audio play there with **Play**.
 - **Make, copy and delete Bots**: **+** beside Bots makes one from a name and what it's for; ⋯ on a
   Bot opens its settings, starts a room with it, duplicates it or deletes it.
-- **Appearance** in Settings: light, dark or like Windows, five colour themes, and the size of text
-  in chats. The rest of the app's text is bigger too, and replies take most of the chat's width.
+- **Appearance** in Settings: light, dark or like Windows, five accent colours, and the size of text
+  in chats. Replies take most of the chat's width.
 
 - **Sign in to your Hermes gateway** through its sign-in page in your browser. The sign-in is kept in
   Windows Credential Manager, and Unibot reconnects by itself when the connection drops. Gateways

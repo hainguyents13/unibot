@@ -1,19 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, MessagesSquare, Plus, Settings, SlidersHorizontal, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Copy, MessagesSquare, SlidersHorizontal, Trash2 } from "lucide-react";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { notify, onOpenTarget, setAttention } from "../platform/desktop";
 import type { MadeBot } from "../hermes/bot-profiles";
 import type { ChatThread } from "../hermes/chat-thread";
-import type { Link, Session, SessionState } from "../hermes/session";
+import type { Session, SessionState } from "../hermes/session";
 import type { Bot } from "../hermes/types";
 import { DeleteBotDialog, DuplicateBotDialog, NewBotDialog } from "./bot-dialogs";
-import { ContactList } from "./bot-list";
 import { BotPanel, type BotPanelTab } from "./bot-panel";
 import { NewRoomDialog } from "./new-room-dialog";
 import { GatewayFilesContext, type GatewayFiles } from "./reply-file-cards";
 import { ChatView } from "./chat-view";
 import { RoomView } from "./room-view";
+import { Sidebar } from "./sidebar";
 import { SettingsDialog, type SettingsPage } from "./settings-dialog";
 
 interface ShellProps {
@@ -41,7 +40,6 @@ export function Shell({ session, state }: ShellProps) {
   const bot = selection?.kind === "bot" ? state.bots.find((b) => b.id === selection.id) : undefined;
   const room = selection?.kind === "room" ? session.room(selection.id) : undefined;
   const botIds = state.bots.map((b) => b.id);
-  const now = Date.now();
   const gatewayFiles = useMemo<GatewayFiles>(
     () => ({
       read: (profile, path) => session.readFile(profile, path),
@@ -124,41 +122,18 @@ export function Shell({ session, state }: ShellProps) {
 
   return (
     <GatewayFilesContext.Provider value={gatewayFiles}>
-      <div className="relative grid h-screen grid-cols-[minmax(240px,300px)_minmax(0,1fr)_auto]">
-        <aside className="flex min-h-0 flex-col border-r bg-sidebar text-sidebar-foreground">
-          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pt-2 pb-2">
-            <LinkNotice link={state.link} />
-            <SectionHeader title="Bots" add="New Bot" onAdd={() => setDialog({ kind: "newBot" })} />
-            <ContactList
-              label="Bots"
-              rows={state.bots}
-              selectedId={selection?.kind === "bot" ? selection.id : undefined}
-              now={now}
-              onSelect={(id) => setSelection({ kind: "bot", id })}
-              menu={botMenu}
-            />
-            {state.link.kind === "online" && state.bots.length === 0 && (
-              <p className="px-4 text-[13px] text-muted-foreground">No Bots on this gateway yet. Make one with +.</p>
-            )}
-            <SectionHeader title="Rooms" add="New room" onAdd={() => setDialog({ kind: "newRoom" })} className="mt-3" />
-            <ContactList
-              label="Rooms"
-              rows={state.rooms}
-              selectedId={selection?.kind === "room" ? selection.id : undefined}
-              now={now}
-              avatar={() => "#"}
-              onSelect={(id) => setSelection({ kind: "room", id })}
-            />
-          </div>
-          <footer className="border-t p-2">
-            <Button type="button" variant="ghost" className="w-full justify-start text-muted-foreground" onClick={() => setSettings({ kind: "gateway" })}>
-              <Settings aria-hidden />
-              Settings
-            </Button>
-          </footer>
-          {settings && <SettingsDialog session={session} state={state} page={settings} onPage={setSettings} onClose={() => setSettings(undefined)} />}
-        </aside>
-        <main className="relative flex min-h-0 min-w-0 flex-col">
+      <div className="relative flex h-screen bg-surface">
+        <Sidebar
+          state={state}
+          selection={selection}
+          onSelect={setSelection}
+          botMenu={botMenu}
+          onNewBot={() => setDialog({ kind: "newBot" })}
+          onNewRoom={() => setDialog({ kind: "newRoom" })}
+          onSettings={setSettings}
+        />
+        {settings && <SettingsDialog session={session} state={state} page={settings} onPage={setSettings} onClose={() => setSettings(undefined)} />}
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           {bot && thread?.botId === bot.id ? (
             <ChatView
               key={bot.id}
@@ -177,7 +152,9 @@ export function Shell({ session, state }: ShellProps) {
               remove={() => session.deleteRoom(room.id)}
             />
           ) : (
-            <p className="m-auto text-muted-foreground">Pick a Bot or a room to chat with.</p>
+            <p className="m-auto text-[13.5px] text-ink-3" style={{ animation: "fade-in 300ms ease-out both" }}>
+              Pick a Bot or a room to chat with.
+            </p>
           )}
         </main>
         {bot && panel && (
@@ -226,40 +203,4 @@ export function Shell({ session, state }: ShellProps) {
       </div>
     </GatewayFilesContext.Provider>
   );
-}
-
-/** "BOTS" or "ROOMS" over its list, with + to make one. */
-function SectionHeader({ title, add, onAdd, className }: { title: string; add: string; onAdd: () => void; className?: string }) {
-  return (
-    <div className={`flex items-center justify-between pr-2 pl-4 ${className ?? ""}`}>
-      <h2 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{title}</h2>
-      <Button type="button" variant="ghost" size="icon" className="size-7 text-muted-foreground" aria-label={add} title={add} onClick={onAdd}>
-        <Plus aria-hidden />
-      </Button>
-    </div>
-  );
-}
-
-function LinkNotice({ link }: { link: Link }) {
-  const box = "mx-3 mb-1 rounded-md px-3 py-2 text-[13px]";
-  switch (link.kind) {
-    case "connecting":
-      return (
-        <p className={`${box} bg-muted text-muted-foreground`} role="status">
-          Connecting…
-        </p>
-      );
-    case "offline":
-      return (
-        <p className={`${box} bg-attention-soft text-attention`} role="status">
-          {link.message} Trying again…
-        </p>
-      );
-    case "online":
-      return link.dialect === "canonical" ? (
-        <p className={`${box} bg-muted text-muted-foreground`} role="status">
-          This gateway runs <code>hermes gateway</code>. Chats there aren't supported yet; use <code>hermes dashboard</code>.
-        </p>
-      ) : null;
-  }
 }

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Download, File, FileArchive, FileAudio, FileImage, FileText, FileVideo, FolderOpen, Loader2, Play } from "lucide-react";
+import { Download, File, FileArchive, FileAudio, FileImage, FileText, FileVideo, FolderOpen, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { describeError } from "../hermes/gateway-error";
 import { fileName, mediaOf } from "../hermes/reply-files";
@@ -104,23 +104,25 @@ function FileCard({ profile, path }: { profile: string; path: string }) {
             : "On the gateway";
 
   return (
-    <div className="flex max-w-xl flex-col gap-2 rounded-lg border bg-card p-2 text-sm">
-      {url && media?.kind === "image" && <img src={url} alt={fileName(path)} className="max-h-80 w-fit max-w-full rounded-md object-contain" />}
-      {url && media?.kind === "video" && <video src={url} controls autoPlay className="max-h-[420px] w-full rounded-md bg-black" aria-label={fileName(path)} />}
-      {url && media?.kind === "audio" && <audio src={url} controls autoPlay className="w-full" aria-label={fileName(path)} />}
-      <div className="flex items-center gap-3 px-1">
-        <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+    <div className="flex max-w-xl flex-col gap-2 rounded-card bg-surface p-2 shadow-card" style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>
+      {url && media?.kind === "image" && <img src={url} alt={fileName(path)} className="max-h-80 w-fit max-w-full rounded-control object-contain" style={{ animation: "fade-in 300ms ease-out both" }} />}
+      {url && media?.kind === "video" && <video src={url} controls autoPlay className="max-h-[420px] w-full rounded-control bg-black" style={{ animation: "pop-in 240ms cubic-bezier(0.23,1,0.32,1) both" }} aria-label={fileName(path)} />}
+      {url && media?.kind === "audio" && <audio src={url} controls autoPlay className="w-full" style={{ animation: "fade-in 300ms ease-out both" }} aria-label={fileName(path)} />}
+      <div className="flex items-center gap-2.5 px-1">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-field text-ink-2 shadow-hairline">
+          <Icon className="size-4" strokeWidth={1.8} aria-hidden />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium" title={path}>
+          <p className="truncate text-[13px] font-medium text-ink" title={path}>
             {fileName(path)}
           </p>
-          <p className="truncate text-xs text-muted-foreground" role={status.kind === "failed" ? "alert" : "status"}>
+          <p className={`truncate text-[12px] ${status.kind === "failed" ? "text-red" : "text-ink-3"}`} role={status.kind === "failed" ? "alert" : "status"}>
             {line}
           </p>
         </div>
         {(media?.kind === "video" || media?.kind === "audio") && !url && (
           <Button type="button" variant="outline" size="sm" disabled={!files || busy} onClick={() => void play()}>
-            {status.kind === "loading" ? <Loader2 className="animate-spin" aria-hidden /> : <Play aria-hidden />}
+            {status.kind === "loading" ? <Spinner /> : <Play aria-hidden />}
             Play
           </Button>
         )}
@@ -131,11 +133,16 @@ function FileCard({ profile, path }: { profile: string; path: string }) {
           </Button>
         ) : (
           <Button type="button" variant="outline" size="sm" disabled={!files || busy} onClick={() => void download()}>
-            {status.kind === "saving" ? <Loader2 className="animate-spin" aria-hidden /> : <Download aria-hidden />}
+            {status.kind === "saving" ? <Spinner /> : <Download aria-hidden />}
             Download
           </Button>
         )}
       </div>
     </div>
   );
+}
+
+/** Beautiful UI's small ring spinner (ThinkingState), in a button while a file comes or saves. */
+function Spinner() {
+  return <span className="size-3 shrink-0 rounded-full border-[1.5px] border-line-strong border-t-ink-2" style={{ animation: "spin 700ms linear infinite" }} aria-hidden />;
 }

@@ -62,17 +62,18 @@ export function ScreenView({ screen, botName }: { screen: BotScreen; botName: st
         ? "Someone else is in control. You're watching."
         : `${botName} is in control. You're watching.`;
 
-  // The computer always shows dark, whatever Windows's setting, like the screen it frames.
-  const barButton = "border-stone-700 bg-stone-800 text-stone-100 hover:bg-stone-700 hover:text-stone-100";
-  const barPrimary = "bg-stone-100 text-stone-900 hover:bg-stone-200";
+  // The computer always shows dark, whatever Windows's setting, like the screen it frames: Beautiful UI's
+  // dark surfaces, written out so the light theme doesn't flip them.
+  const barButton = "bg-[oklch(0.26_0.006_271.191)] text-[oklch(0.964_0.002_247.839)] shadow-[0_0_0_1px_oklch(1_0_0/0.1)] hover:bg-[oklch(0.318_0.007_274.747)]";
+  const barPrimary = "bg-[oklch(0.964_0.002_247.839)] text-[oklch(0.247_0.006_258.361)] hover:opacity-90";
 
   return (
     <section
-      className={cn("absolute inset-0 z-20 flex flex-col bg-neutral-950 text-stone-100", view.control === "you" && "shadow-[inset_0_0_0_3px_#dc2626]")}
+      className={cn("absolute inset-0 z-20 flex flex-col bg-[oklch(0.182_0.004_264.459)] text-[oklch(0.964_0.002_247.839)] animate-[fade-in_200ms_ease-out_both]", view.control === "you" && "shadow-[inset_0_0_0_3px_#dc2626]")}
       aria-label={`${botName}'s computer`}
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 bg-stone-900 px-3 py-2">
-        <span className="text-[13px]" role="status">
+      <header className="flex flex-wrap items-center justify-between gap-2 bg-[oklch(0.209_0.004_264.477)] px-3 py-2 shadow-[0_1px_0_oklch(1_0_0/0.08)]">
+        <span className="text-[13px] font-medium" role="status">
           {!running ? `${botName}'s computer is off.` : link === "lost" ? "Lost the connection to the computer." : who}
         </span>
         <div className="flex items-center gap-2">

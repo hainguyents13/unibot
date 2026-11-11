@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ROOM_SEATS, seatsNote, suggestedRoomName } from "../hermes/room";
 import type { Bot } from "../hermes/types";
+import GlideMenu from "@/components/primitives/GlideMenu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,28 +42,34 @@ export function NewRoomDialog({ bots, create, onCreated, onClose, picked: initia
       failure="The room wasn't made."
       onClose={onClose}
     >
-      <div className="grid gap-2">
+      <div className="grid gap-1.5">
         <Label htmlFor="new-room-name">Name</Label>
         <Input id="new-room-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={suggestion || "Room name"} />
       </div>
       <Label id="pick-bots-label">Bots</Label>
       {/* Not a fieldset: a fieldset won't shrink and scroll inside the dialog. */}
-      <div className="min-h-18 shrink overflow-y-auto rounded-md border" role="group" aria-labelledby="pick-bots-label">
-        {bots.map((bot) => {
-          const isPicked = picked.includes(bot.id);
-          return (
-            <label key={bot.id} className="flex cursor-pointer items-center gap-3 border-b px-3 py-2 last:border-b-0 hover:bg-accent has-disabled:cursor-default has-disabled:opacity-50">
-              <Avatar name={bot.name} />
-              <span className="flex-1 font-medium">{bot.name}</span>
-              <Checkbox checked={isPicked} disabled={!isPicked && picked.length >= ROOM_SEATS.max} onCheckedChange={() => toggle(bot.id)} />
-            </label>
-          );
-        })}
+      <div className="min-h-18 shrink overflow-y-auto rounded-card bg-surface p-1 shadow-hairline" role="group" aria-labelledby="pick-bots-label">
+        <GlideMenu rowSelector="[data-menu-row]:not(:has(:disabled))" highlightClassName="inset-x-0 rounded-control bg-hover" className="flex flex-col gap-px">
+          {bots.map((bot) => {
+            const isPicked = picked.includes(bot.id);
+            return (
+              <label
+                key={bot.id}
+                data-menu-row
+                className="relative z-10 flex cursor-pointer items-center gap-3 rounded-control px-2 py-1.5 has-disabled:cursor-default has-disabled:opacity-50"
+              >
+                <Avatar name={bot.name} className="size-7 text-[12px]" />
+                <span className="flex-1 text-[13.5px] font-medium text-ink">{bot.name}</span>
+                <Checkbox checked={isPicked} disabled={!isPicked && picked.length >= ROOM_SEATS.max} onCheckedChange={() => toggle(bot.id)} />
+              </label>
+            );
+          })}
+        </GlideMenu>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-[12px] text-ink-3">
         {note && (
           <>
-            <strong className="text-foreground">{note}</strong>{" "}
+            <strong className="text-ink">{note}</strong>{" "}
           </>
         )}
         A message without an @mention goes to all of them.

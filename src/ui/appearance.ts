@@ -9,13 +9,16 @@ export const THEME_MODES: Array<{ id: ThemeMode; label: string }> = [
   { id: "dark", label: "Dark" },
 ];
 
-/** Colour themes; each is a `[data-palette]` block in `index.css`. `stone` is the default and has none. */
+/**
+ * Accent colours; each is a `[data-palette]` block in `index.css`. `blue` is Beautiful UI's own and
+ * the default, so it has none.
+ */
 export const PALETTES = [
-  { id: "stone", label: "Stone", swatch: "#57534e" },
-  { id: "slate", label: "Slate", swatch: "#475569" },
-  { id: "blue", label: "Blue", swatch: "#2563eb" },
-  { id: "green", label: "Green", swatch: "#059669" },
-  { id: "violet", label: "Violet", swatch: "#7c3aed" },
+  { id: "blue", label: "Blue", swatch: "oklch(0.626 0.205 254.947)" },
+  { id: "slate", label: "Slate", swatch: "oklch(0.446 0.043 257.281)" },
+  { id: "stone", label: "Stone", swatch: "oklch(0.444 0.011 73.639)" },
+  { id: "green", label: "Green", swatch: "oklch(0.596 0.145 163.225)" },
+  { id: "violet", label: "Violet", swatch: "oklch(0.541 0.281 293.009)" },
 ] as const;
 
 export type Palette = (typeof PALETTES)[number]["id"];
@@ -34,7 +37,7 @@ export interface Appearance {
   chatText: number;
 }
 
-const DEFAULTS: Appearance = { mode: "system", palette: "stone", chatText: 16 };
+const DEFAULTS: Appearance = { mode: "system", palette: "blue", chatText: 16 };
 
 // The page's own storage, so the development build and the installed app each keep theirs.
 const KEY = "unibot.appearance";
@@ -57,7 +60,7 @@ export function applyAppearance({ mode, palette, chatText }: Appearance): void {
   const root = document.documentElement;
   if (mode === "system") delete root.dataset.theme;
   else root.dataset.theme = mode;
-  if (palette === "stone") delete root.dataset.palette;
+  if (palette === "blue") delete root.dataset.palette;
   else root.dataset.palette = palette;
   root.style.setProperty("--chat-text", `${chatText}px`);
   setWindowTheme(mode === "system" ? undefined : mode);

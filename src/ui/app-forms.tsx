@@ -4,11 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { presetReady, type AppPreset } from "../hermes/app-presets";
 import { emptyDraft, isDraftComplete, draftHasSecret, type McpCatalogEntry, type McpServerDraft, type McpServerList } from "../hermes/mcp-servers";
 import { openExternal } from "./open-external";
-import { Consent, Field, Note, PageTitle } from "./settings-parts";
+import { Consent, Field, Note, PageTitle, Segmented } from "./settings-parts";
 
 interface FormProps {
   list: McpServerList;
@@ -45,9 +44,9 @@ function AppForm({
       <div className="flex flex-col gap-4" inert={busy}>
         {children}
         {needsConsent && <Consent checked={consent} onChange={setConsent} />}
-        <Note className="text-xs">What you type goes to your gateway, which keeps it. Unibot keeps no copy.</Note>
+        <Note className="text-[12px] text-ink-3">What you type goes to your gateway, which keeps it. Unibot keeps no copy.</Note>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <Button type="submit" disabled={!ready || busy || (needsConsent && !consent)}>
           {busy ? "Adding…" : "Add"}
         </Button>
@@ -74,7 +73,7 @@ export function PresetForm({ preset, list, onDone }: FormProps & { preset: AppPr
       add={(allow) => list.add(draft, allow)}
     >
       <Note>{preset.needs}</Note>
-      <Button type="button" variant="link" className="h-auto self-start p-0 text-working" onClick={() => void openExternal(preset.link.url)}>
+      <Button type="button" variant="link" className="inline-flex h-auto items-center gap-1 self-start p-0 text-[13px] font-medium" onClick={() => void openExternal(preset.link.url)}>
         {preset.link.label}
         <ExternalLink aria-hidden />
       </Button>
@@ -147,28 +146,15 @@ export function CustomForm({ list, onDone }: FormProps) {
       <Field htmlFor={`${id}-name`} label="Name" help="Short and without spaces; the Bot sees it in its tool names.">
         <Input id={`${id}-name`} value={draft.name} onChange={(e) => change({ name: e.target.value })} placeholder="my-app" />
       </Field>
-      <div className="inline-flex self-start rounded-lg bg-muted p-1" role="radiogroup" aria-label="Kind">
-        {(
-          [
-            ["web", "Web address"],
-            ["program", "Program on the gateway"],
-          ] as const
-        ).map(([kind, label]) => (
-          <button
-            key={kind}
-            type="button"
-            role="radio"
-            aria-checked={draft.kind === kind}
-            onClick={() => change({ kind })}
-            className={cn(
-              "rounded-md border-0 bg-transparent px-3 py-1 text-[13px] text-muted-foreground transition-colors",
-              draft.kind === kind && "bg-background font-medium text-foreground shadow-xs",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Kind"
+        value={draft.kind}
+        onChange={(kind) => change({ kind })}
+        options={[
+          { value: "web", label: "Web address" },
+          { value: "program", label: "Program on the gateway" },
+        ]}
+      />
       {draft.kind === "web" ? (
         <>
           <Field htmlFor={`${id}-url`} label="Address">
@@ -201,7 +187,7 @@ export function CustomForm({ list, onDone }: FormProps) {
             <Input id={`${id}-args`} value={draft.arguments} onChange={(e) => change({ arguments: e.target.value })} placeholder="-y @example/mcp-server" />
           </Field>
           <Field htmlFor={`${id}-env`} label="Environment (optional)" help="One per line, as NAME=value.">
-            <Textarea id={`${id}-env`} className="font-mono text-xs" rows={3} value={envText} onChange={(e) => setEnvText(e.target.value)} spellCheck={false} />
+            <Textarea id={`${id}-env`} className="font-mono text-[12px]" rows={3} value={envText} onChange={(e) => setEnvText(e.target.value)} spellCheck={false} />
           </Field>
         </>
       )}

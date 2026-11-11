@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, ExternalLink, Plus } from "lucide-react";
+import GlideMenu from "@/components/primitives/GlideMenu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -35,7 +36,7 @@ export function AppsSettings({ apps, botName }: { apps: BotApps; botName: string
   return (
     <div className="flex flex-col gap-3">
       {screen.kind !== "list" && (
-        <Button type="button" variant="link" className="h-auto self-start p-0 text-working" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
+        <Button type="button" variant="ghost" size="sm" className="-ml-2 self-start text-ink-2" onClick={screen.kind === "add" ? back : () => setScreen({ kind: "add" })}>
           <ChevronLeft aria-hidden />
           {screen.kind === "add" ? `${botName}'s apps` : "Add an app"}
         </Button>
@@ -57,7 +58,7 @@ function AppsList({ apps, botName, onAdd }: { apps: BotApps; botName: string; on
   return (
     <>
       {view.needsApply && (
-        <Panel className="border-working/40 bg-working-soft/40">
+        <Panel className="bg-accent-tint shadow-none animate-[fade-up_300ms_cubic-bezier(0.23,1,0.32,1)_both]">
           <Note>
             {botName}'s open chat still has the apps it started with. Applying reloads them now; the next reply costs more, since the whole conversation is sent
             again. Otherwise new chats get them.
@@ -117,7 +118,7 @@ function ServerRow({ list, server }: { list: McpServerList; server: McpServer })
     <li>
       <Panel>
         <div className="flex items-center justify-between gap-3">
-          <span className="font-semibold">{server.name}</span>
+          <span className="text-[13.5px] font-medium text-ink">{server.name}</span>
           <Switch
             checked={server.enabled}
             disabled={fromPlugin}
@@ -134,12 +135,12 @@ function ServerRow({ list, server }: { list: McpServerList; server: McpServer })
         {status && (status.failed ? <Problem>{status.text}</Problem> : <Note>{status.text}</Note>)}
         {check?.kind === "passed" && check.tools.length > 0 && (
           <details className="text-[13px]">
-            <summary className="cursor-pointer text-muted-foreground">Tools</summary>
+            <summary className="cursor-pointer text-ink-2 transition-colors duration-100 hover:text-ink">Tools</summary>
             <ul className="mt-1 flex max-h-48 flex-col gap-1 overflow-y-auto pl-4">
               {check.tools.map((tool) => (
                 <li key={tool.name}>
-                  <code className="rounded bg-muted px-1 py-0.5 text-xs">{tool.name}</code>
-                  {tool.description ? <span className="text-muted-foreground"> · {tool.description}</span> : ""}
+                  <code className="rounded-chip bg-field px-1 py-0.5 font-mono text-[11.5px] text-ink shadow-hairline">{tool.name}</code>
+                  {tool.description ? <span className="text-ink-3"> · {tool.description}</span> : ""}
                 </li>
               ))}
             </ul>
@@ -177,7 +178,7 @@ function ServerRow({ list, server }: { list: McpServerList; server: McpServer })
               Test
             </Button>
             {!fromPlugin && (
-              <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setConfirming(true)}>
+              <Button type="button" variant="ghost" size="sm" className="text-ink-2" onClick={() => setConfirming(true)}>
                 Remove
               </Button>
             )}
@@ -224,8 +225,8 @@ function ConnectorRow({ list, connector }: { list: ConnectorList; connector: Con
     <li>
       <Panel>
         <div className="flex items-center justify-between gap-3">
-          <span className="font-semibold">{connector.name}</span>
-          {connector.isConnected && <Badge className="rounded-full border-0 bg-working-soft text-working">Connected</Badge>}
+          <span className="text-[13.5px] font-medium text-ink">{connector.name}</span>
+          {connector.isConnected && <Badge className="bg-green-tint text-green">Connected</Badge>}
         </div>
         {connector.summary && <Note>{connector.summary}</Note>}
         {connector.statusReason && <Problem>{connector.statusReason}</Problem>}
@@ -251,6 +252,15 @@ function ConnectorRow({ list, connector }: { list: ConnectorList; connector: Con
   );
 }
 
+/** Choices in a card, with Beautiful UI's one highlight gliding to the one you point at. */
+function PickList({ children }: { children: ReactNode }) {
+  return (
+    <GlideMenu rowSelector="[data-menu-row]:not(:disabled)" highlightClassName="inset-x-0 rounded-control bg-hover" className="rounded-card bg-surface p-1 shadow-card">
+      <ul className="flex flex-col gap-px">{children}</ul>
+    </GlideMenu>
+  );
+}
+
 /** A choice in Add an app: a quick setup, a catalog entry, or your own. */
 function Pick({ title, tag, description, disabled, onClick }: { title: string; tag?: string; description?: ReactNode; disabled?: boolean; onClick: () => void }) {
   return (
@@ -258,16 +268,17 @@ function Pick({ title, tag, description, disabled, onClick }: { title: string; t
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent disabled:cursor-default disabled:opacity-50 disabled:hover:bg-card"
+      data-menu-row
+      className="group relative z-10 flex w-full items-center gap-3 rounded-control px-2.5 py-2 text-left transition-transform duration-150 active:scale-[0.99] disabled:cursor-default disabled:opacity-50"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-semibold">
+        <span className="text-[13.5px] font-medium text-ink">
           {title}
-          {tag && <span className="font-normal text-muted-foreground"> · {tag}</span>}
+          {tag && <span className="font-normal text-ink-3"> · {tag}</span>}
         </span>
-        {description && <span className="text-[13px] text-muted-foreground">{description}</span>}
+        {description && <span className="text-[12.5px] text-ink-2">{description}</span>}
       </span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <ChevronRight className="size-4 shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
     </button>
   );
 }
@@ -291,15 +302,15 @@ function AddApp({ list, onPick }: { list: McpServerList; onPick: (screen: Screen
   return (
     <>
       <SectionTitle className="mt-0">Quick setup</SectionTitle>
-      <ul className="flex flex-col gap-2">
+      <PickList>
         {APP_PRESETS.map((preset) => (
           <li key={preset.id}>
             <Pick title={preset.title} description={preset.description} onClick={() => onPick({ kind: "preset", preset })} />
           </li>
         ))}
-      </ul>
-      <details className="rounded-lg border px-3 py-2.5 text-[13px]">
-        <summary className="cursor-pointer font-semibold">Google Drive, Docs, Sheets, Slides and Calendar</summary>
+      </PickList>
+      <details className="rounded-card bg-surface px-3 py-2.5 text-[13px] shadow-card">
+        <summary className="cursor-pointer font-medium text-ink">Google Drive, Docs, Sheets, Slides and Calendar</summary>
         <Note className="mt-2">
           The simplest way is Composio above, or Connected apps if this gateway has a Nous Portal account; either keeps your Google sign-in for you. To keep it
           on your gateway instead, run a Google Workspace MCP server there with your own Google Cloud OAuth client and an https address, then add it under Your
@@ -308,7 +319,7 @@ function AddApp({ list, onPick }: { list: McpServerList; onPick: (screen: Screen
         <Button
           type="button"
           variant="link"
-          className="mt-1 h-auto p-0 text-[13px] text-working"
+          className="mt-1 inline-flex h-auto items-center gap-1 p-0 text-[13px] font-medium"
           onClick={() => void openExternal("https://github.com/taylorwilsdon/google_workspace_mcp")}
         >
           About the Google Workspace MCP server
@@ -318,7 +329,7 @@ function AddApp({ list, onPick }: { list: McpServerList; onPick: (screen: Screen
       <SectionTitle>From Hermes's catalog</SectionTitle>
       {view.catalogPhase.kind === "loading" && <Note>Loading…</Note>}
       {view.catalogPhase.kind === "failed" && <Problem>{view.catalogPhase.message}</Problem>}
-      <ul className="flex flex-col gap-2">
+      <PickList>
         {view.catalog.map((entry) => (
           <li key={entry.name}>
             <Pick
@@ -340,9 +351,13 @@ function AddApp({ list, onPick }: { list: McpServerList; onPick: (screen: Screen
             />
           </li>
         ))}
-      </ul>
+      </PickList>
       <SectionTitle>Your own</SectionTitle>
-      <Pick title="Another MCP server" description="A web address, or a program the gateway runs." onClick={() => onPick({ kind: "custom" })} />
+      <PickList>
+        <li>
+          <Pick title="Another MCP server" description="A web address, or a program the gateway runs." onClick={() => onPick({ kind: "custom" })} />
+        </li>
+      </PickList>
     </>
   );
 }

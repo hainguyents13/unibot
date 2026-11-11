@@ -1,13 +1,14 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { ArrowUp, Pencil, Square, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
+import LoadingState from "@/components/primitives/LoadingState";
+import PromptBar from "@/components/primitives/PromptBar";
 import { Button } from "@/components/ui/button";
 import { ChatContainerContent, ChatContainerRoot } from "@/components/ui/chat-container";
-import { DotsLoader } from "@/components/ui/loader";
-import { PromptInput, PromptInputAction, PromptInputActions, PromptInputTextarea } from "@/components/ui/prompt-input";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import type { RoomThread } from "../hermes/room";
 import type { Bot } from "../hermes/types";
 import { ChatHeader, HeaderTool } from "./chat-header";
+import { ComposerColumn } from "./composer";
 import { CommandText, RequestCard } from "./request-cards";
 import { DeleteRoomDialog, RenameRoomDialog } from "./room-edit-dialogs";
 import { Note, Problem } from "./settings-parts";
@@ -67,16 +68,16 @@ export function RoomView({ room, bots, rename, remove }: RoomViewProps) {
       <ChatContainerRoot className="relative min-h-0 flex-1">
         <ChatContainerContent className="gap-4 px-5 py-5">
           {view.phase.kind === "loading" && (
-            <Note className="m-auto" role="status">
-              Opening the room…
-            </Note>
+            <div className="m-auto">
+              <LoadingState label="Opening the room" />
+            </div>
           )}
           {view.phase.kind === "failed" && <Problem className="mx-auto max-w-3xl">{view.phase.message}</Problem>}
           {!view.driverRunning && view.phase.kind === "ready" && (
-            <Note className="mx-auto max-w-3xl rounded-md bg-muted px-3 py-2">The gateway's room service isn't running, so this room can't take messages now.</Note>
+            <Note className="mx-auto w-full max-w-3xl rounded-control bg-inset px-3 py-2 shadow-hairline">The gateway's room service isn't running, so this room can't take messages now.</Note>
           )}
           {view.phase.kind === "ready" && view.items.length === 0 && view.pending.length === 0 && (
-            <Note className="m-auto">No messages yet. A message goes to every Bot here; {handles} asks one.</Note>
+            <Note className="m-auto text-ink-3" style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>No messages yet. A message goes to every Bot here; {handles} asks one.</Note>
           )}
           <TranscriptView
             items={view.items}
@@ -89,77 +90,78 @@ export function RoomView({ room, bots, rename, remove }: RoomViewProps) {
             {view.pending.length > 0 && (
               <ol className="flex flex-col items-end gap-2" aria-label="Sending">
                 {view.pending.map((message, i) => (
-                  <li key={i} className="max-w-[80%] rounded-2xl rounded-br-md bg-secondary px-3.5 py-2 text-sm whitespace-pre-wrap opacity-60">
+                  <li
+                    key={i}
+                    className="max-w-[80%] rounded-xl bg-field px-3 py-1.5 text-(length:--chat-text) leading-[1.45] whitespace-pre-wrap text-ink opacity-60"
+                    style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}
+                  >
                     {message}
                   </li>
                 ))}
               </ol>
             )}
             {view.isBusy && (
-              <p className="flex items-center gap-2.5 text-[13px] text-muted-foreground" role="status">
-                <DotsLoader size="sm" />
-                {working.length ? `${working.join(", ")} ${working.length === 1 ? "is" : "are"} replying…` : "Replying…"}
-              </p>
+              <LoadingState label={working.length ? `${working.join(", ")} ${working.length === 1 ? "is" : "are"} replying` : "Replying"} />
             )}
             {view.approvals.map((approval) => (
-              <RequestCard key={approval.prompt.id} title={`${memberName(approval.memberId)} wants to run a command`} aria-label="Approval">
+              <RequestCard
+                key={approval.prompt.id}
+                title={`${memberName(approval.memberId)} wants to run a command`}
+                aria-label="Approval"
+                actions={
+                  <>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => void room.answer(approval, "deny")}>
+                      Deny
+                    </Button>
+                    {approval.prompt.choices.includes("once") && (
+                      <Button type="button" size="sm" variant="accent" onClick={() => void room.answer(approval, "once")}>
+                        Allow once
+                      </Button>
+                    )}
+                  </>
+                }
+              >
                 <CommandText>{approval.prompt.command}</CommandText>
                 {approval.prompt.description && <Note>{approval.prompt.description}</Note>}
-                <div className="flex gap-2">
-                  {approval.prompt.choices.includes("once") && (
-                    <Button type="button" size="sm" onClick={() => void room.answer(approval, "once")}>
-                      Allow once
-                    </Button>
-                  )}
-                  <Button type="button" size="sm" variant="ghost" onClick={() => void room.answer(approval, "deny")}>
-                    Deny
-                  </Button>
-                </div>
               </RequestCard>
             ))}
             {view.retries.map((taskId) => (
-              <RequestCard key={taskId} title="A reply stopped partway" aria-label="Reply stopped">
+              <RequestCard
+                key={taskId}
+                title="A reply stopped partway"
+                aria-label="Reply stopped"
+                actions={
+                  <>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => void room.dismiss(taskId)}>
+                      Dismiss
+                    </Button>
+                    <Button type="button" size="sm" variant="accent" onClick={() => void room.retry(taskId)}>
+                      Try again
+                    </Button>
+                  </>
+                }
+              >
                 <Note>Try it again, or dismiss it. Dismissing also stops any other reply running in this room.</Note>
-                <div className="flex gap-2">
-                  <Button type="button" size="sm" onClick={() => void room.retry(taskId)}>
-                    Try again
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => void room.dismiss(taskId)}>
-                    Dismiss
-                  </Button>
-                </div>
               </RequestCard>
             ))}
           </div>
         </ChatContainerContent>
         <div className="absolute right-5 bottom-3">
-          <ScrollButton className="shadow-sm" />
+          <ScrollButton />
         </div>
       </ChatContainerRoot>
-      <div className="mx-auto w-full max-w-3xl px-4 pb-4">
-        <PromptInput value={text} onValueChange={setText} onSubmit={send} maxHeight={200} disabled={!view.canSend} className="rounded-2xl bg-card shadow-sm">
-          <PromptInputTextarea
-            className="min-h-10 px-2 text-sm"
-            placeholder={view.canSend ? `Message everyone, or ${handles} to ask one` : "Connecting to the room…"}
-            aria-label={`Message ${view.name}`}
-          />
-          <PromptInputActions className="justify-end gap-1.5 px-1 pt-1">
-            {view.isBusy && (
-              <PromptInputAction tooltip="Stop every reply">
-                <Button type="button" variant="outline" size="sm" className="h-8 rounded-full" onClick={() => void room.stop()}>
-                  <Square className="size-3 fill-current" aria-hidden />
-                  Stop all
-                </Button>
-              </PromptInputAction>
-            )}
-            <PromptInputAction tooltip="Send">
-              <Button type="button" size="icon" className="size-8 rounded-full" aria-label="Send" disabled={!view.canSend || !text.trim()} onClick={send}>
-                <ArrowUp aria-hidden />
-              </Button>
-            </PromptInputAction>
-          </PromptInputActions>
-        </PromptInput>
-      </div>
+      <ComposerColumn>
+        <PromptBar
+          value={text}
+          onValueChange={setText}
+          onSubmit={send}
+          placeholder={view.canSend ? `Message everyone, or ${handles} to ask one` : "Connecting to the room…"}
+          ariaLabel={`Message ${view.name}`}
+          disabled={!view.canSend}
+          stop={view.isBusy ? { label: "Stop every reply", text: "Stop all", onClick: () => void room.stop() } : undefined}
+          canSend={view.canSend && text.trim() !== ""}
+        />
+      </ComposerColumn>
     </div>
   );
 }

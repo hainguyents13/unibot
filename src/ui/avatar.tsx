@@ -5,7 +5,7 @@ export function Avatar({ name, mark, className }: { name: string; mark?: string;
   return (
     <span
       aria-hidden="true"
-      className={cn("grid size-8 shrink-0 place-items-center rounded-full bg-input text-[13px] font-semibold text-foreground", className)}
+      className={cn("grid size-8 shrink-0 place-items-center rounded-full bg-hover-2 text-[13px] font-medium text-ink-2", className)}
     >
       {mark ?? name.slice(0, 1).toUpperCase()}
     </span>

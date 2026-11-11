@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./ui/app";
 import { applyAppearance, savedAppearance } from "./ui/appearance";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 
 applyAppearance(savedAppearance());

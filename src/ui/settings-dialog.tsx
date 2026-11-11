@@ -1,9 +1,11 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Blocks, Bot as BotIcon, LogOut, Palette, Server } from "lucide-react";
+import GlideMenu from "@/components/primitives/GlideMenu";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { GatewayAddress } from "../hermes/gateway-address";
 import { describeError } from "../hermes/gateway-error";
 import type { Link, Session, SessionState } from "../hermes/session";
@@ -30,15 +32,22 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex h-[min(640px,calc(100vh-3rem))] w-[min(880px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-none">
-        <header className="flex items-center border-b px-5 py-3.5">
-          <DialogTitle className="text-base">Settings</DialogTitle>
+        <header className="flex items-center border-b border-line px-5 py-3.5">
+          <DialogTitle>Settings</DialogTitle>
           <DialogDescription className="sr-only">The gateway, how chats look, Composio, and each Bot's apps.</DialogDescription>
         </header>
         <div className="flex min-h-0 flex-1 max-sm:flex-col">
           <nav
-            className="flex w-52 shrink-0 flex-col gap-0.5 overflow-y-auto border-r bg-sidebar p-2 max-sm:w-auto max-sm:flex-row max-sm:items-center max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b"
+            className="w-52 shrink-0 overflow-y-auto border-r border-line bg-canvas p-2 max-sm:w-auto max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b"
             aria-label="Settings pages"
           >
+            {/* One highlight glides between the pages (Beautiful UI's GlideMenu); a narrow window
+                lays them out in a row, where each row shows its own hover instead. */}
+            <GlideMenu
+              rowSelector="[data-menu-row]"
+              highlightClassName="inset-x-0 rounded-[8px] bg-hover-2 max-sm:hidden"
+              className="flex flex-col gap-px max-sm:flex-row max-sm:items-center"
+            >
             <NavItem icon={<Server />} current={page.kind === "gateway"} onClick={() => onPage({ kind: "gateway" })}>
               Gateway
             </NavItem>
@@ -48,15 +57,17 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
             <NavItem icon={<Blocks />} current={page.kind === "composio"} onClick={() => onPage({ kind: "composio" })}>
               Composio
             </NavItem>
-            <SectionTitle className="mx-2.5 mt-4 mb-1 max-sm:my-0">Apps of each Bot</SectionTitle>
+            <SectionTitle className="mx-2 mt-4 mb-1 shrink-0 whitespace-nowrap max-sm:my-0">Apps of each Bot</SectionTitle>
             {state.bots.map((b) => (
               <NavItem key={b.id} icon={<BotIcon />} current={page.kind === "apps" && page.botId === b.id} onClick={() => onPage({ kind: "apps", botId: b.id })}>
                 {b.name}
               </NavItem>
             ))}
-            {state.bots.length === 0 && <Note className="mx-2.5">No Bots yet.</Note>}
+            {state.bots.length === 0 && <Note className="mx-2">No Bots yet.</Note>}
+            </GlideMenu>
           </nav>
-          <section className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5 max-sm:px-4">
+          <section className="min-w-0 flex-1 overflow-y-auto px-6 py-5 max-sm:px-4">
+            <div key={pageKey(page)} className="flex flex-col gap-3 animate-[fade-up_300ms_cubic-bezier(0.23,1,0.32,1)_both]">
             {page.kind === "gateway" && <GatewaySettings session={session} state={state} />}
             {page.kind === "appearance" && <AppearanceSettings />}
             {page.kind === "composio" && <ComposioSettings session={session} bots={state.bots} />}
@@ -70,6 +81,7 @@ export function SettingsDialog({ session, state, page, onPage, onClose }: Settin
               ) : (
                 <Note>That Bot isn't on this gateway any more.</Note>
               ))}
+            </div>
           </section>
         </div>
       </DialogContent>
@@ -83,7 +95,11 @@ function NavItem({ icon, current, onClick, children }: { icon: ReactNode; curren
       type="button"
       aria-current={current ? "page" : undefined}
       onClick={onClick}
-      className="flex shrink-0 items-center gap-2.5 rounded-md border-0 bg-transparent px-2.5 py-1.5 text-left whitespace-nowrap transition-colors hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-semibold [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground"
+      data-menu-row
+      className={cn(
+        "relative z-10 flex h-8 shrink-0 items-center gap-2 rounded-control px-2 text-left text-[13.5px] font-medium whitespace-nowrap transition-[background-color,color,transform] duration-150 active:scale-[0.98] max-sm:hover:bg-hover [&_svg]:size-4 [&_svg]:shrink-0",
+        current ? "bg-hover-2 text-ink sm:group-hover/glide-menu:bg-transparent [&_svg]:text-ink" : "text-ink-2 [&_svg]:text-ink-3",
+      )}
     >
       {icon}
       <span className="truncate">{children}</span>
@@ -112,7 +128,7 @@ function GatewaySettings({ session, state }: { session: Session; state: Settings
       <PageTitle>Gateway</PageTitle>
       <Panel>
         <div className="flex items-center justify-between gap-3">
-          <span className="min-w-0 font-semibold break-all">{current}</span>
+          <span className="min-w-0 text-[13.5px] font-medium break-all text-ink">{current}</span>
           {!state.demo && (
             <Button type="button" variant="outline" size="sm" onClick={() => void session.signOut()}>
               <LogOut aria-hidden />
@@ -124,7 +140,7 @@ function GatewaySettings({ session, state }: { session: Session; state: Settings
       </Panel>
       {!state.demo && (
         <>
-          <Note className="text-xs">Signing out removes this gateway's saved sign-in from this computer. Switching to another gateway keeps it.</Note>
+          <Note className="text-[12px] text-ink-3">Signing out removes this gateway's saved sign-in from this computer. Switching to another gateway keeps it.</Note>
           <RecentGateways
             title="Switch to"
             gateways={others}
@@ -150,12 +166,17 @@ function GatewaySettings({ session, state }: { session: Session; state: Settings
               </Button>
             </div>
             {problem && <Problem>{problem}</Problem>}
-            <Note className="text-xs">A gateway you haven't used here signs in on its page in your browser.</Note>
+            <Note className="text-[12px] text-ink-3">A gateway you haven't used here signs in on its page in your browser.</Note>
           </form>
         </>
       )}
     </>
   );
+}
+
+/** Each page fades in when you switch to it. */
+function pageKey(page: SettingsPage): string {
+  return page.kind === "apps" ? `apps:${page.botId}` : page.kind;
 }
 
 function linkText(link: Link): string {

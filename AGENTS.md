@@ -30,9 +30,13 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
   `fake-gateway.ts` are the demo's data.
 - `src/platform/`: the Tauri side of the client's interfaces (HTTP, WebSocket, Credential Manager,
   loopback). Loaded only inside the app, so the browser preview never imports Tauri plugins.
-- `src/ui/`: React screens, styled with Tailwind. `src/components/ui/` is shadcn/ui and prompt-kit
-  (chat container, message, prompt input, loader) as their CLI wrote them, with Unibot's few edits
-  marked; the theme is `src/index.css`.
+- `src/ui/`: React screens, styled with Tailwind. The look is [Beautiful UI](https://www.beautifului.dev)'s
+  (a shadcn registry, MIT): its tokens, keyframes and spacing utilities are in `src/index.css`, and
+  its components are copied from `https://www.beautifului.dev/r/<name>.json` into
+  `src/components/atoms/` and `src/components/primitives/`. Their demos run on timers and made-up
+  data; Unibot's copies take its real data instead, and each says at the top what changed.
+  `src/components/ui/` is shadcn/ui and prompt-kit restyled with those tokens; `button.tsx` is
+  Beautiful UI's Button under shadcn's variant names.
 - `src-tauri/`: Rust, only for what the webview can't do: Credential Manager (`token_store.rs`), the
   sign-in loopback listener (`loopback.rs`), and the tray, close-to-tray, attention dot, start with
   Windows and notifications (`desktop.rs`).
@@ -89,7 +93,9 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
 - **Check what `shadcn add` writes.** It has imported `cn` from an unrelated npm package named
   `cn` (and installed it) instead of `@/lib/utils`, and added `@custom-variant dark (&:is(.dark *))`
   to `src/index.css`, which would replace Unibot's own `dark` variant (Windows's setting, or the
-  `data-theme` Settings → Appearance sets). Undo both after each run. prompt-kit's Markdown and Tool aren't used: replies render with markdown-it,
+  `data-theme` Settings → Appearance sets). Undo both after each run. A Beautiful UI item also pulls
+  its `foundation.css` (another `@import "tailwindcss"`, `.dark` tokens and its own `dark` variant),
+  so copy its component file from the registry JSON instead of running `shadcn add` on it. prompt-kit's Markdown and Tool aren't used: replies render with markdown-it,
   and tool calls fold into one line.
 - **A Bot's settings are the official Bots editor's calls** (`bot-settings.ts`): `profiles.describe`
   reads them; `profiles.configure` writes description, `soul` (SOUL.md) and `model` + `provider`; the
@@ -117,6 +123,19 @@ Unibot is a Windows messenger for Hermes Agent's Bot Mode. It talks to a Hermes 
 - **Theme colours are `light-dark()`**, so `index.css` lists each once; `color-scheme` on `<html>`
   picks the side, and `data-theme`/`data-palette` (appearance.ts) override it. Keep the `dark`
   custom variant in step with that, or `dark:` classes (prose-invert) disagree with the colours.
+  Beautiful UI ships its dark values in a `.dark` block; they're the second half of each pair here.
+  Box shadows can't be `light-dark()`, so the dark ones are listed again under the dark selectors.
+- **`accent` is Beautiful UI's brand blue, not shadcn's hover grey.** Hover is `bg-hover` or
+  `bg-hover-2`. Anything copied from shadcn (`hover:bg-accent`, `focus:bg-accent`) turns blue until
+  it's changed. Palettes in Settings → Appearance swap only `--accent`, `--accent-ink` and
+  `--accent-tint`.
+- **Tailwind emits only the theme variables a utility uses**, so `--shadow-card` and the others
+  spell out shadow-plugin's stacks instead of `var(--shadow-sm)`, which would be empty. Arbitrary
+  values write `cubic-bezier(0.23,1,0.32,1)` for the same reason, not `var(--ease-out-strong)`.
+- **The sidebar is one tree `--sidebar-width` wide, clipped as it folds** (Beautiful UI's
+  SidebarNav, `.sidebar-*` in `index.css`). Words carry `sidebar-copy` and fade; buttons with
+  their own hover opacity carry `sidebar-fold-hide` instead, since an unlayered opacity would
+  override theirs.
 - **Only the refresh token is saved.** Credential Manager caps a credential at 2,560 bytes; a
   restored sign-in refreshes before its first request.
 

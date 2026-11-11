@@ -26,8 +26,9 @@ tells you when a Bot replies or needs you.
 - **Routines**: see each Bot's scheduled jobs in plain words, pause or resume them, and run one now.
 - **Make Bots**: **+** beside Bots makes one from a name and what it's for. ⋯ on a Bot starts a room
   with it, duplicates it, or deletes it.
-- **Appearance**: light, dark or like Windows, a colour theme, and how big chats read, in
-  **Settings** → Appearance.
+- **Appearance**: light, dark or like Windows, an accent colour, and how big chats read, in
+  **Settings** → Appearance. The sidebar folds to a rail of avatars, and its search finds a Bot or
+  room by name.
 - **Apps**: give a Bot tools from other services. Add GitHub, Plane or Composio in a few steps, anything from
   Hermes's catalog (Linear, Notion, Dropbox and more), or your own MCP server; sign in on the
   provider's page where it asks, test it, and apply it to the open chat. Gateways with a Nous Portal
@@ -111,10 +112,14 @@ on `127.0.0.1:19119` for trying sign-in, chats, rooms and routines without a rea
 ## Credits
 
 Unibot speaks the same gateway protocol as [Usual Bot](https://github.com/usual-labs/usual-bot), the
-native Hermes messenger for Mac and iPhone, and follows its design. It uses
-[Tauri](https://tauri.app), [React](https://react.dev), [Tailwind CSS](https://tailwindcss.com),
+native Hermes messenger for Mac and iPhone, and follows its design. Its interface is built from
+[Beautiful UI](https://www.beautifului.dev) (MIT, © 2026 Shane Levine), whose components and
+design tokens Unibot copies in and wires to Hermes. It uses [Tauri](https://tauri.app),
+[React](https://react.dev), [Tailwind CSS](https://tailwindcss.com),
 [shadcn/ui](https://ui.shadcn.com) and [Radix](https://www.radix-ui.com) (MIT),
-[prompt-kit](https://www.prompt-kit.com) (MIT), [Lucide](https://lucide.dev) icons (ISC), [markdown-it](https://github.com/markdown-it/markdown-it)
+[prompt-kit](https://www.prompt-kit.com) (MIT), [shadow-plugin](https://github.com/flornkm/shadow-plugin)
+(MIT), the [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/)
+typefaces (OFL-1.1), [Lucide](https://lucide.dev) icons (ISC), [markdown-it](https://github.com/markdown-it/markdown-it)
 (MIT) and [noVNC](https://github.com/novnc/noVNC) (MPL-2.0) for the Bot's screen.
 
 ## License

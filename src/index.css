@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Beautiful UI's smooth, layered shadow stacks on Tailwind's shadow-xs…2xl scale. */
+@import "shadow-plugin/unprefixed";
 @plugin "@tailwindcss/typography";
 
 /*
@@ -18,40 +20,111 @@
   }
 }
 
-/* shadcn/ui's theme, in Unibot's warm greys ("Stone"). */
+/*
+ * Beautiful UI's foundation (beautifului.dev, MIT): cool near-white canvas, white cards, hairline
+ * rings, layered single-digit-opacity shadows, a neutral ink ramp, and colour used sparingly. Its
+ * `.dark` values are the second half of each `light-dark()`.
+ */
 :root {
   color-scheme: light dark;
+
+  /* surfaces */
+  --page: light-dark(oklch(0.985 0.001 286.376), oklch(0.209 0.004 264.477));
+  --canvas: light-dark(oklch(0.961 0.002 247.84), oklch(0.231 0.004 264.487));
+  --surface: light-dark(oklch(1 0 0), oklch(0.26 0.006 271.191));
+  --inset: light-dark(oklch(0.979 0.002 247.839), oklch(0.243 0.004 264.492));
+  --hover: light-dark(oklch(0.97 0.002 247.839), oklch(0.289 0.006 271.22));
+  --hover-2: light-dark(oklch(0.933 0.003 247.86), oklch(0.318 0.007 274.747));
+
+  /* ink ramp */
+  --ink: light-dark(oklch(0.247 0.006 258.361), oklch(0.964 0.002 247.839));
+  --ink-2: light-dark(oklch(0.506 0.01 264.477), oklch(0.731 0.008 260.731));
+  --ink-3: light-dark(oklch(0.695 0.009 264.505), oklch(0.541 0.01 264.484));
+
+  /* borders: solid and crisp, not alpha */
+  --line: light-dark(oklch(0.946 0.003 264.542), oklch(0.308 0.006 258.354));
+  --line-strong: light-dark(oklch(0.912 0.005 258.326), oklch(0.356 0.007 264.474));
+  --line-soft: light-dark(oklch(0.966 0.002 264.542), oklch(0.278 0.006 258.354));
+  --field: light-dark(oklch(0.961 0.001 286.375), oklch(0.293 0.006 271.223));
+
+  /* accent; Settings → Appearance swaps it (`data-palette`, below) */
+  --accent: light-dark(oklch(0.626 0.205 254.947), oklch(0.68 0.173 253.301));
+  --accent-ink: light-dark(oklch(0.556 0.187 255.617), oklch(0.788 0.113 248.33));
+  --accent-tint: light-dark(oklch(0.96 0.019 252.878), oklch(0.68 0.173 253.301 / 0.16));
+
+  /* semantic */
+  --green: light-dark(oklch(0.603 0.155 150.883), oklch(0.705 0.154 153.814));
+  --green-tint: light-dark(oklch(0.958 0.017 159.118), oklch(0.705 0.154 153.814 / 0.14));
+  --orange: light-dark(oklch(0.689 0.179 49.902), oklch(0.746 0.156 55.642));
+  --orange-tint: light-dark(oklch(0.964 0.021 67.581), oklch(0.746 0.156 55.642 / 0.14));
+  --red: light-dark(oklch(0.621 0.192 23.042), oklch(0.666 0.18 21.433));
+  --red-tint: light-dark(oklch(0.956 0.017 17.462), oklch(0.666 0.18 21.433 / 0.14));
+
+  --tooltip-bg: light-dark(oklch(0.272 0.008 264.435), oklch(0.182 0.004 264.459));
+  --tooltip-fg: light-dark(oklch(0.976 0.002 247.839), oklch(0.964 0.002 247.839));
+  --tooltip-border: light-dark(oklch(0.356 0.007 264.474), oklch(0.308 0.006 258.354));
+
+  /* shadows: a solid hairline ring over shadow-plugin's xs, sm, md and lg stacks, written out
+   * because Tailwind only emits the theme's variables that a utility uses; dark mode's are below */
+  --shadow-hairline: 0 0 0 1px var(--line);
+  --shadow-btn: 0 0 0 1px var(--line-strong), 0 0 4px 0 rgba(0, 0, 0, 0.04);
+  --shadow-card:
+    0 0 0 1px var(--line), 0 18px 47px 0 rgba(0, 0, 0, 0.03), 0 7.5px 19px 0 rgba(0, 0, 0, 0.02),
+    0 4px 10.5px 0 rgba(0, 0, 0, 0.02), 0 2.3px 5.8px 0 rgba(0, 0, 0, 0.01), 0 1.2px 3.1px 0 rgba(0, 0, 0, 0.01),
+    0 0.5px 1.3px 0 rgba(0, 0, 0, 0.01);
+  --shadow-raised:
+    0 0 0 1px var(--line), 0 17.54px 23.39px 0 rgba(0, 0, 0, 0.04), 0 9.4px 12.5px 0 rgba(0, 0, 0, 0.03),
+    0 5.25px 7px 0 rgba(0, 0, 0, 0.02), 0 2.79px 3.72px -2px rgba(0, 0, 0, 0.01), 0 1.16px 1.5px 0 rgba(0, 0, 0, 0.01);
+  --shadow-overlay:
+    0 0 0 1px var(--line), 0 25px 50px 0 rgba(0, 0, 0, 0.05), 0 12px 24px 0 rgba(0, 0, 0, 0.04),
+    0 6px 12px 0 rgba(0, 0, 0, 0.03), 0 3px 6px 0 rgba(0, 0, 0, 0.02), 0 1.5px 3px 0 rgba(0, 0, 0, 0.02);
+  --shadow-inset-field: inset 0 1px 2px oklch(0 0 0 / 0.12);
+
+  /* shadcn/ui's names, so its components read the same palette */
   --radius: 0.5rem;
-  --background: light-dark(#ffffff, #1c1b1a);
-  --foreground: light-dark(#1c1917, #f5f5f4);
-  --card: light-dark(#ffffff, #232221);
-  --card-foreground: var(--foreground);
-  --popover: var(--card);
-  --popover-foreground: var(--foreground);
-  --primary: light-dark(#1c1917, #f5f5f4);
-  --primary-foreground: light-dark(#ffffff, #1c1917);
-  --secondary: light-dark(#f5f5f4, #2e2d2b);
-  --secondary-foreground: var(--foreground);
-  --muted: light-dark(#f5f5f4, #2e2d2b);
-  --muted-foreground: light-dark(#78716c, #a8a29e);
-  --accent: light-dark(#ecebea, #2e2d2b);
-  --accent-foreground: var(--foreground);
-  --destructive: light-dark(#b91c1c, #dc2626);
-  --border: light-dark(#e7e5e4, #3a3836);
-  --input: light-dark(#d6d3d1, #44403c);
-  --ring: light-dark(#a8a29e, #78716c);
-  --sidebar: light-dark(#f5f5f4, #242322);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--accent);
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
-  --attention: light-dark(#c2410c, #fdba74);
-  --attention-soft: light-dark(#ffedd5, #431407);
-  --working: light-dark(#1d4ed8, #93c5fd);
-  --working-soft: light-dark(#dbeafe, #172554);
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--surface);
+  --secondary: var(--hover-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--field);
+  --muted-foreground: var(--ink-2);
+  --destructive: var(--red);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--accent);
+  --sidebar: var(--canvas);
+  --sidebar-foreground: var(--ink);
+
+  /* Unibot's states */
+  --attention: var(--orange);
+  --attention-soft: var(--orange-tint);
+  --working: var(--accent-ink);
+  --working-soft: var(--accent-tint);
+}
+
+/* Box shadows can't be `light-dark()`, so dark mode lists them again: a faint light ring
+ * dissolving into a deeper shadow. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shadow-btn: 0 0 0 1px oklch(1 0 0 / 0.1), 0 1px 2px oklch(0 0 0 / 0.3);
+    --shadow-card: 0 0 0 1px oklch(1 0 0 / 0.11), 0 1px 2px oklch(0 0 0 / 0.2), 0 2px 6px oklch(0 0 0 / 0.2);
+    --shadow-raised: 0 0 0 1px oklch(1 0 0 / 0.13), 0 2px 10px oklch(0 0 0 / 0.22);
+    --shadow-overlay: 0 0 0 1px oklch(1 0 0 / 0.15), 0 8px 28px oklch(0 0 0 / 0.34);
+    --shadow-inset-field: inset 0 1px 2px oklch(0 0 0 / 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --shadow-btn: 0 0 0 1px oklch(1 0 0 / 0.1), 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-card: 0 0 0 1px oklch(1 0 0 / 0.11), 0 1px 2px oklch(0 0 0 / 0.2), 0 2px 6px oklch(0 0 0 / 0.2);
+  --shadow-raised: 0 0 0 1px oklch(1 0 0 / 0.13), 0 2px 10px oklch(0 0 0 / 0.22);
+  --shadow-overlay: 0 0 0 1px oklch(1 0 0 / 0.15), 0 8px 28px oklch(0 0 0 / 0.34);
+  --shadow-inset-field: inset 0 1px 2px oklch(0 0 0 / 0.4);
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -60,53 +133,82 @@
   color-scheme: dark;
 }
 
-/* Colour themes. Slate is cooler greys; the others tint buttons, your messages and selections. */
+/* Colour themes tint the accent: focus rings, links, selections and accent buttons. Blue is
+ * Beautiful UI's own and the default, so it has no block. */
 :root[data-palette="slate"] {
-  --background: light-dark(#ffffff, #0f172a);
-  --foreground: light-dark(#0f172a, #f1f5f9);
-  --card: light-dark(#ffffff, #162033);
-  --primary: light-dark(#0f172a, #f1f5f9);
-  --primary-foreground: light-dark(#ffffff, #0f172a);
-  --secondary: light-dark(#f1f5f9, #1e293b);
-  --muted: light-dark(#f1f5f9, #1e293b);
-  --muted-foreground: light-dark(#64748b, #94a3b8);
-  --accent: light-dark(#e2e8f0, #1e293b);
-  --border: light-dark(#e2e8f0, #334155);
-  --input: light-dark(#cbd5e1, #475569);
-  --ring: light-dark(#94a3b8, #64748b);
-  --sidebar: light-dark(#f8fafc, #131c2e);
+  --accent: light-dark(oklch(0.446 0.043 257.281), oklch(0.704 0.04 256.788));
+  --accent-ink: light-dark(oklch(0.372 0.044 257.287), oklch(0.869 0.022 252.894));
+  --accent-tint: light-dark(oklch(0.968 0.007 247.896), oklch(0.704 0.04 256.788 / 0.16));
 }
-:root[data-palette="blue"] {
-  --primary: light-dark(#2563eb, #60a5fa);
-  --primary-foreground: light-dark(#ffffff, #0b1530);
-  --secondary: light-dark(#e0ecff, #1e2f57);
-  --accent: light-dark(#e3ebfa, #26334d);
-  --ring: light-dark(#93c5fd, #3b82f6);
-  --sidebar: light-dark(#f4f7fd, #1f2229);
+:root[data-palette="stone"] {
+  --accent: light-dark(oklch(0.444 0.011 73.639), oklch(0.709 0.01 56.259));
+  --accent-ink: light-dark(oklch(0.374 0.01 67.558), oklch(0.869 0.005 56.366));
+  --accent-tint: light-dark(oklch(0.97 0.001 106.424), oklch(0.709 0.01 56.259 / 0.16));
 }
 :root[data-palette="green"] {
-  --primary: light-dark(#059669, #34d399);
-  --primary-foreground: light-dark(#ffffff, #032b20);
-  --secondary: light-dark(#dcf5ea, #123d30);
-  --accent: light-dark(#e2f2ea, #22352e);
-  --ring: light-dark(#6ee7b7, #10b981);
-  --sidebar: light-dark(#f3f9f6, #1e2421);
+  --accent: light-dark(oklch(0.596 0.145 163.225), oklch(0.765 0.177 163.223));
+  --accent-ink: light-dark(oklch(0.508 0.118 165.612), oklch(0.845 0.143 164.978));
+  --accent-tint: light-dark(oklch(0.962 0.044 156.743), oklch(0.765 0.177 163.223 / 0.16));
 }
 :root[data-palette="violet"] {
-  --primary: light-dark(#7c3aed, #a78bfa);
-  --primary-foreground: light-dark(#ffffff, #1d1035);
-  --secondary: light-dark(#ede5ff, #34245a);
-  --accent: light-dark(#eee8fb, #2f2840);
-  --ring: light-dark(#c4b5fd, #8b5cf6);
-  --sidebar: light-dark(#f7f5fd, #23212b);
+  --accent: light-dark(oklch(0.541 0.281 293.009), oklch(0.702 0.183 293.541));
+  --accent-ink: light-dark(oklch(0.491 0.27 292.581), oklch(0.811 0.111 293.571));
+  --accent-tint: light-dark(oklch(0.969 0.016 293.756), oklch(0.702 0.183 293.541 / 0.16));
 }
 
 @theme inline {
-  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  /* Beautiful UI */
+  --color-page: var(--page);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-inset: var(--inset);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hover: var(--hover);
+  --color-hover-2: var(--hover-2);
+  --color-field: var(--field);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-line-soft: var(--line-soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-tint: var(--accent-tint);
+  --color-green: var(--green);
+  --color-green-tint: var(--green-tint);
+  --color-orange: var(--orange);
+  --color-orange-tint: var(--orange-tint);
+  --color-red: var(--red);
+  --color-red-tint: var(--red-tint);
+  --color-tooltip-bg: var(--tooltip-bg);
+  --color-tooltip-fg: var(--tooltip-fg);
+
+  --shadow-hairline: var(--shadow-hairline);
+  --shadow-btn: var(--shadow-btn);
+  --shadow-inset-field: var(--shadow-inset-field);
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", monospace;
+
+  /* radii: chips 6, controls 8, cards 10, windows 14, pills 999 */
+  --radius-chip: 6px;
+  --radius-control: 8px;
+  --radius-card: 10px;
+  --radius-window: 14px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* easing: strong curves; the built-in ones are too weak */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-link: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* shadcn/ui */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -119,20 +221,12 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
   --color-attention: var(--attention);
   --color-attention-soft: var(--attention-soft);
   --color-working: var(--working);
@@ -141,15 +235,248 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-line;
   }
   html {
     font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     /* Messages and the message box; Settings → Appearance changes it (appearance.ts). */
     --chat-text: 16px;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    line-height: 1.4;
+    @apply bg-surface font-sans text-ink;
+    font-feature-settings: "cv11", "ss01";
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+  }
+  ::selection {
+    background: var(--accent-tint);
+    color: var(--ink);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  /* Tailwind resets buttons to the arrow; anything clickable invites the click. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label:has(input) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [contenteditable]:focus-visible {
+    outline: none;
+  }
+}
+
+/* Beautiful UI's spacing for small cards and icon buttons. */
+@utility primitive-card-pad {
+  padding: 12px;
+}
+@utility primitive-card-bar {
+  padding: 10px 12px;
+}
+@utility primitive-card-footer {
+  padding: 10px;
+}
+@utility primitive-icon-button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+}
+
+/*
+ * Beautiful UI's SidebarNav: one persistent tree, `--sidebar-width` wide, clipped by the sidebar as
+ * it folds to a 56px rail. Rows narrow to their avatar and the words fade out, so every avatar
+ * stays put while the sidebar moves. The ⋯ and + buttons hide outright (`sidebar-fold-hide`):
+ * their own hover opacity would otherwise bring them back on the rail.
+ */
+.sidebar-row {
+  width: calc(var(--sidebar-width) - 16px);
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sidebar-copy {
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 180ms ease-out,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sidebar-dot {
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 180ms ease-out,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sidebar-glide-highlight {
+  right: 8px;
+  left: 8px;
+}
+[data-sidebar-collapsed="true"] .sidebar-row {
+  width: 40px;
+}
+[data-sidebar-collapsed="true"] .sidebar-copy {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-8px);
+}
+[data-sidebar-collapsed="true"] .sidebar-fold-hide {
+  visibility: hidden;
+}
+[data-sidebar-collapsed="true"] .sidebar-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+[data-sidebar-collapsed="true"] .sidebar-glide-highlight {
+  right: auto;
+  width: 40px;
+}
+.sidebar-expand-control {
+  pointer-events: none;
+  opacity: 0;
+}
+[data-sidebar-collapsed="true"] .sidebar-collapse-control {
+  pointer-events: none;
+  opacity: 0;
+}
+[data-sidebar-collapsed="true"] .sidebar-expand-control {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* Beautiful UI's streaming caret and blurred leading edge (StreamText). */
+.stream-tail {
+  filter: blur(1.6px);
+  mask-image: linear-gradient(to right, oklch(0 0 0) 20%, oklch(0 0 0 / 0.2));
+}
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 1.5px;
+  translate: 0 -0.5px;
+  border-radius: 1px;
+  background: var(--ink);
+  vertical-align: text-bottom;
+  animation: caret-blink 1s step-end infinite;
+}
+.stream-caret.is-streaming {
+  animation: none;
+}
+
+/* Beautiful UI's shared keyframes. */
+@keyframes shimmer-text {
+  from {
+    background-position: 150% center;
+  }
+  to {
+    background-position: -50% center;
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* pixel-grid loader: brighten plateau, staggered per cell */
+@keyframes pixel-on {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  18%,
+  42% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 0.15;
+  }
+}
+/* Unibot's side panel comes in from the right edge. */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .stream-tail {
+    filter: none;
+    mask-image: none;
   }
 }

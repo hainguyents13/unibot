@@ -13,36 +13,46 @@ export function ConnectionCard({ thread, card, botName, online, openApps }: { th
   const { request } = card;
   if (request.suggested) {
     return (
-      <RequestCard title={`${botName} wants you to connect apps`} aria-label="Connect apps">
+      <RequestCard
+        title={`${botName} wants you to connect apps`}
+        aria-label="Connect apps"
+        actions={
+          <>
+            <Button type="button" size="sm" variant="outline" onClick={openApps}>
+              Open Apps
+            </Button>
+            <Button type="button" size="sm" variant="accent" disabled={!online} onClick={() => thread.finishConnecting()}>
+              Done
+            </Button>
+          </>
+        }
+      >
         {request.suggested.length > 0 && <Note>It suggests {request.suggested.join(", ")}.</Note>}
         <Note>Connect them under Apps, then press Done so {botName} goes on.</Note>
         {card.problem && <Problem>{card.problem}</Problem>}
-        <div className="flex gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={openApps}>
-            Open Apps
-          </Button>
-          <Button type="button" size="sm" disabled={!online} onClick={() => thread.finishConnecting()}>
-            Done
-          </Button>
-        </div>
       </RequestCard>
     );
   }
   const waiting = openTargets(request);
   return (
-    <RequestCard title={`${botName} wants to connect ${request.targets.length === 1 ? request.targets[0].title : "apps"}`} aria-label="Connect apps">
-      <ul className="flex flex-col divide-y rounded-lg border">
+    <RequestCard
+      title={`${botName} wants to connect ${request.targets.length === 1 ? request.targets[0].title : "apps"}`}
+      aria-label="Connect apps"
+      actions={
+        waiting.length > 0 && (
+          <Button type="button" size="sm" variant="ghost" disabled={!online || card.busy.length > 0} onClick={() => thread.skipConnection()}>
+            Not now
+          </Button>
+        )
+      }
+    >
+      <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-control bg-inset shadow-hairline">
         {request.targets.map((target) => (
           <TargetRow key={target.name} thread={thread} target={target} card={card} online={online} />
         ))}
       </ul>
       {card.problem && <Problem>{card.problem}</Problem>}
-      <Note className="text-xs">{botName} waits up to 5 minutes. Not now lets it go on without them.</Note>
-      {waiting.length > 0 && (
-        <Button type="button" size="sm" variant="ghost" className="self-start" disabled={!online || card.busy.length > 0} onClick={() => thread.skipConnection()}>
-          Not now
-        </Button>
-      )}
+      <Note className="text-[12px] text-ink-3">{botName} waits up to 5 minutes. Not now lets it go on without them.</Note>
     </RequestCard>
   );
 }
@@ -68,9 +78,9 @@ function TargetRow({ thread, target, card, online }: { thread: ChatThread; targe
                   ? "Getting the sign-in page…"
                   : undefined;
   return (
-    <li className="flex items-center justify-between gap-3 px-3 py-2.5">
+    <li className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ animation: "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" }}>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="font-semibold">{target.title}</span>
+        <span className="text-[13px] font-medium text-ink">{target.title}</span>
         {status && (target.state === "failed" ? <Problem>{status}</Problem> : <Note>{status}</Note>)}
         {target.instructions && <Note>{target.instructions}</Note>}
       </div>
@@ -78,6 +88,7 @@ function TargetRow({ thread, target, card, online }: { thread: ChatThread; targe
         <Button
           type="button"
           size="sm"
+          variant="accent"
           disabled={!online}
           onClick={() => {
             const url = thread.connectApp(target);
@@ -88,7 +99,7 @@ function TargetRow({ thread, target, card, online }: { thread: ChatThread; targe
         </Button>
       )}
       {offer.kind === "approve" && (
-        <Button type="button" size="sm" disabled={!online || busy} onClick={() => thread.connectApp(target)}>
+        <Button type="button" size="sm" variant="accent" disabled={!online || busy} onClick={() => thread.connectApp(target)}>
           {busy ? "Adding…" : target.action === "enable" ? "Turn on" : "Add"}
         </Button>
       )}

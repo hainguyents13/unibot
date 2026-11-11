@@ -10,12 +10,12 @@ function NameHelp({ name, taken }: { name: string; taken: string[] }) {
   if (!name.trim()) return null;
   const problem = botNameProblem(name, taken);
   return problem ? (
-    <p className="text-xs text-destructive" role="alert">
+    <p className="text-[12px] text-red" role="alert">
       {problem}
     </p>
   ) : (
-    <p className="text-xs text-muted-foreground">
-      Its ID on the gateway will be <code>{botSlug(name)}</code>, which never changes.
+    <p className="text-[12px] text-ink-3">
+      Its ID on the gateway will be <code className="rounded-chip bg-field px-1 font-mono text-[11.5px] text-ink">{botSlug(name)}</code>, which never changes.
     </p>
   );
 }
@@ -40,16 +40,16 @@ export function NewBotDialog({ taken, create, onCreated, onClose }: NewBotDialog
       failure="The Bot wasn't made."
       onClose={onClose}
     >
-      <div className="grid gap-2">
+      <div className="grid gap-1.5">
         <Label htmlFor="new-bot-name">Name</Label>
         <Input id="new-bot-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Job Scout" autoFocus autoComplete="off" />
         <NameHelp name={name} taken={taken} />
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-1.5">
         <Label htmlFor="new-bot-about">What it's for</Label>
         <Input id="new-bot-about" value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Finds and summarises job posts" autoComplete="off" />
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-[12px] text-ink-3">
         It starts with Hermes's skills and the gateway's model. Its rules, model and thinking are in its panel once it's made.
       </p>
     </ModalDialog>
@@ -75,12 +75,12 @@ export function DuplicateBotDialog({ bot, taken, duplicate, onCreated, onClose }
       failure={`${bot.name} wasn't copied.`}
       onClose={onClose}
     >
-      <div className="grid gap-2">
+      <div className="grid gap-1.5">
         <Label htmlFor="copy-bot-name">Name of the copy</Label>
         <Input id="copy-bot-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus autoComplete="off" />
         <NameHelp name={name} taken={taken} />
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-[12px] text-ink-3">
         The copy gets {bot.name}'s model, keys, rules and skills. Its chats, memory and routines stay with {bot.name}, and so do its
         Telegram, Discord and other channels.
       </p>
@@ -99,13 +99,13 @@ export function DeleteBotDialog({ bot, remove, onClose }: { bot: Bot; remove: ()
       failure={`${bot.name} wasn't deleted.`}
       onClose={onClose}
     >
-      <p className="text-sm text-muted-foreground">
+      <p className="text-[13px] text-ink-2">
         This removes {bot.name} from the gateway for good: its chats, memory, skills, routines, apps and keys. Rooms it's in keep it listed,
         but it won't answer there.
       </p>
-      <div className="grid gap-2">
+      <div className="grid gap-1.5">
         <Label htmlFor="delete-bot-id">
-          Type <code className="rounded bg-muted px-1">{bot.id}</code> to delete it
+          Type <code className="rounded-chip bg-field px-1 font-mono text-[11.5px] text-ink">{bot.id}</code> to delete it
         </Label>
         <Input id="delete-bot-id" value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus autoComplete="off" spellCheck={false} />
       </div>

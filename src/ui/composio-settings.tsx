@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore, type FormEvent } from "react";
 import { ExternalLink } from "lucide-react";
+import GlideMenu from "@/components/primitives/GlideMenu";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -68,17 +69,21 @@ export function ComposioSettings({ session, bots }: { session: Session; bots: Bo
       <PageTitle>Composio</PageTitle>
       <Note>{COMPOSIO.description}</Note>
       <Note>{COMPOSIO.needs}</Note>
-      <Button type="button" variant="link" className="h-auto self-start p-0 text-working" onClick={() => void openExternal(COMPOSIO.link.url)}>
+      <Button type="button" variant="link" className="inline-flex h-auto items-center gap-1 self-start p-0 text-[13px] font-medium" onClick={() => void openExternal(COMPOSIO.link.url)}>
         {COMPOSIO.link.label}
         <ExternalLink aria-hidden />
       </Button>
       <SectionTitle>Bots that use it</SectionTitle>
       {bots.length === 0 && <Note>No Bots on this gateway yet.</Note>}
-      <ul className="divide-y rounded-lg border" inert={busy}>
-        {rows.map(({ bot, list }) => (
-          <ComposioRow key={bot.id} bot={bot} list={list} checked={isChosen(bot, list)} onChange={(value) => setChosen({ ...chosen, [bot.id]: value })} />
-        ))}
-      </ul>
+      {bots.length > 0 && (
+        <GlideMenu rowSelector="[data-menu-row]" highlightClassName="inset-x-0 rounded-control bg-hover" className="rounded-card bg-surface p-1 shadow-card">
+          <ul className="flex flex-col gap-px" inert={busy}>
+            {rows.map(({ bot, list }) => (
+              <ComposioRow key={bot.id} bot={bot} list={list} checked={isChosen(bot, list)} onChange={(value) => setChosen({ ...chosen, [bot.id]: value })} />
+            ))}
+          </ul>
+        </GlideMenu>
+      )}
       <Field htmlFor="composio-key" label="API key" help="Needed only to add Composio to a Bot that doesn't have it. The gateway keeps it; Unibot keeps no copy.">
         <Input id="composio-key" type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} disabled={busy} />
       </Field>
@@ -87,7 +92,7 @@ export function ComposioSettings({ session, bots }: { session: Session; bots: Bo
       <Button type="submit" className="self-start" disabled={!ready || busy}>
         {busy ? "Saving…" : "Save"}
       </Button>
-      <Note className="text-xs">A Bot's open chat gets Composio when you Apply on that Bot's apps page; new chats get it anyway.</Note>
+      <Note className="text-[12px] text-ink-3">A Bot's open chat gets Composio when you Apply on that Bot's apps page; new chats get it anyway.</Note>
     </form>
   );
 }
@@ -98,11 +103,11 @@ function ComposioRow({ bot, list, checked, onChange }: { bot: Bot; list: McpServ
   const has = composioServer(list) !== undefined;
   return (
     <li>
-      <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-accent has-disabled:cursor-default">
+      <label data-menu-row className="relative z-10 flex cursor-pointer items-center gap-3 rounded-control px-2.5 py-1.5 has-disabled:cursor-default">
         <Checkbox checked={checked} disabled={loading || view.phase.kind === "failed"} onCheckedChange={(value) => onChange(value === true)} />
-        <Avatar name={bot.name} className="size-7 text-xs" />
-        <span className="flex-1 font-medium">{bot.name}</span>
-        <span className="text-xs text-muted-foreground">
+        <Avatar name={bot.name} className="size-7 text-[12px]" />
+        <span className="flex-1 text-[13.5px] font-medium text-ink">{bot.name}</span>
+        <span className="text-[12px] text-ink-3">
           {loading ? "Checking…" : view.phase.kind === "failed" ? "Couldn't read its apps" : has ? "Has Composio" : ""}
         </span>
       </label>

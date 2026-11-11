@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore, type DragEvent } from "react";
 import { PanelRight, Puzzle, Upload } from "lucide-react";
 import { ChatContainerContent, ChatContainerRoot } from "@/components/ui/chat-container";
 import { ScrollButton } from "@/components/ui/scroll-button";
+import LoadingState from "@/components/primitives/LoadingState";
 import type { Attachment } from "../hermes/attachments";
 import type { ChatThread } from "../hermes/chat-thread";
 import type { Bot } from "../hermes/types";
@@ -63,17 +64,17 @@ export function ChatView({ bot, thread, openApps, panelOpen, onTogglePanel }: Ch
       </ChatHeader>
       <div className="relative flex min-h-0 flex-1 flex-col">
         {/* Follows the newest message while you're at the bottom, and leaves you be when you scrolled up. */}
-        <ChatContainerRoot className={dragging ? "min-h-0 flex-1 opacity-40" : "min-h-0 flex-1"}>
+        <ChatContainerRoot className={`min-h-0 flex-1 transition-opacity duration-200 ${dragging ? "opacity-40" : ""}`}>
           <ChatContainerContent className="gap-4 px-5 py-5">
-            {view.banner && <Note className="mx-auto max-w-3xl rounded-md bg-muted px-3 py-2">{view.banner}</Note>}
+            {view.banner && <Note className="mx-auto w-full max-w-3xl rounded-control bg-inset px-3 py-2 shadow-hairline">{view.banner}</Note>}
             {view.phase.kind === "loading" && (
-              <Note className="m-auto" role="status">
-                Opening the chat…
-              </Note>
+              <div className="m-auto">
+                <LoadingState label="Opening the chat" />
+              </div>
             )}
             {view.phase.kind === "failed" && <Problem className="mx-auto max-w-3xl">{view.phase.message}</Problem>}
             {view.phase.kind === "ready" && view.items.length === 0 && !view.isRunning && (
-              <Note className="m-auto">No messages yet. Say hello to {bot.name}.</Note>
+              <Note className="m-auto text-ink-3" style={{ animation: "fade-up 400ms cubic-bezier(0.23,1,0.32,1) both" }}>No messages yet. Say hello to {bot.name}.</Note>
             )}
             <TranscriptView items={view.items} draft={view.draft} isRunning={view.isRunning} profile={bot.id} />
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
@@ -82,13 +83,16 @@ export function ChatView({ bot, thread, openApps, panelOpen, onTogglePanel }: Ch
             </div>
           </ChatContainerContent>
           <div className="absolute right-5 bottom-3">
-            <ScrollButton className="shadow-sm" />
+            <ScrollButton />
           </div>
         </ChatContainerRoot>
       </div>
       {dragging && (
-        <div className="pointer-events-none absolute inset-x-5 top-20 bottom-28 grid place-items-center rounded-xl border-2 border-dashed border-ring bg-background/70 text-muted-foreground">
-          <span className="flex items-center gap-2">
+        <div
+          className="pointer-events-none absolute inset-x-5 top-20 bottom-28 grid place-items-center rounded-window border-2 border-dashed border-line-strong bg-surface/80 text-ink-2"
+          style={{ animation: "fade-in 150ms ease-out both" }}
+        >
+          <span className="flex items-center gap-2 text-[13px] font-medium" style={{ animation: "pop-in 200ms cubic-bezier(0.23,1,0.32,1) both" }}>
             <Upload className="size-4" aria-hidden />
             Drop files to send them to {bot.name}
           </span>

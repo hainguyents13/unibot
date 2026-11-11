@@ -69,7 +69,7 @@ function Form({ settings, view, saved, isUnencrypted }: BotSettingsFormProps & {
 
   return (
     <form className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 animate-[fade-up_300ms_cubic-bezier(0.23,1,0.32,1)_both]">
         <Field label="Name" htmlFor={`${id}-name`}>
           <Input id={`${id}-name`} value={draft.title} placeholder={friendlyName(settings.profile)} onChange={(e) => change({ title: e.target.value })} />
         </Field>
@@ -83,7 +83,7 @@ function Form({ settings, view, saved, isUnencrypted }: BotSettingsFormProps & {
         >
           <Textarea
             id={`${id}-rules`}
-            className="max-h-[45vh] min-h-48 font-mono text-xs md:text-xs"
+            className="max-h-[45vh] min-h-48 font-mono text-[12px] leading-relaxed"
             value={draft.soul}
             spellCheck={false}
             onChange={(e) => change({ soul: e.target.value })}
@@ -113,8 +113,8 @@ function Form({ settings, view, saved, isUnencrypted }: BotSettingsFormProps & {
         </Field>
 
         {view.confirm && (
-          <Panel className="border-attention/40 bg-attention-soft/50" role="alert">
-            <p className="text-[13px]">{view.confirm}</p>
+          <Panel className="bg-orange-tint shadow-none animate-[pop-in_220ms_cubic-bezier(0.23,1,0.32,1)_both]" role="alert">
+            <p className="text-[13px] text-ink">{view.confirm}</p>
             <div className="flex gap-2">
               <Button type="button" size="sm" disabled={view.isSaving} onClick={() => void settings.save(draft, true)}>
                 Use it anyway
@@ -128,7 +128,7 @@ function Form({ settings, view, saved, isUnencrypted }: BotSettingsFormProps & {
         {view.problem && <Problem>{view.problem}</Problem>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t bg-background px-4 py-3">
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-line bg-surface px-4 py-3">
         <Button type="submit" disabled={!changed || view.isSaving || notReady}>
           {view.isSaving ? "Saving…" : "Save"}
         </Button>
@@ -143,7 +143,7 @@ function Form({ settings, view, saved, isUnencrypted }: BotSettingsFormProps & {
             {view.notice}
           </Note>
         )}
-        {changed && !view.isSaving && <Note className="w-full text-xs">Saved for all its chats, routines and rooms. The open chat switches too.</Note>}
+        {changed && !view.isSaving && <Note className="w-full text-[12px] text-ink-3 animate-[fade-in_200ms_ease-out_both]">Saved for all its chats, routines and rooms. The open chat switches too.</Note>}
       </div>
     </form>
   );
@@ -192,7 +192,7 @@ function ModelFields({
             {providers.map((p) => (
               <SelectItem key={p.slug} value={p.slug}>
                 {p.name}
-                {!p.isReady && <span className="text-muted-foreground"> · {p.keyName ? "needs a key" : "not set up"}</span>}
+                {!p.isReady && <span className="text-ink-3"> · {p.keyName ? "needs a key" : "not set up"}</span>}
               </SelectItem>
             ))}
             {draft.provider && !provider && <SelectItem value={draft.provider}>{draft.provider}</SelectItem>}

@@ -1,6 +1,5 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CalendarClock, Monitor, SlidersHorizontal, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BotScreen } from "../hermes/screen";
 import type { Session } from "../hermes/session";
@@ -38,39 +37,50 @@ export function BotPanel({ session, bot, tab, onTab, onClose, isUnencrypted, not
     <aside
       aria-label={`${bot.name}'s details`}
       className={cn(
-        "flex min-h-0 flex-col border-l bg-background",
+        "flex min-h-0 flex-col border-l border-line bg-surface transition-[width] duration-300 ease-link",
+        "animate-[slide-in-right_280ms_cubic-bezier(0.16,1,0.3,1)_both]",
         tab === "computer" ? "w-[min(760px,55vw)]" : "w-[380px]",
-        "max-[1000px]:absolute max-[1000px]:inset-y-0 max-[1000px]:right-0 max-[1000px]:z-30 max-[1000px]:max-w-[calc(100vw-2rem)] max-[1000px]:shadow-xl",
+        "max-[1000px]:absolute max-[1000px]:inset-y-0 max-[1000px]:right-0 max-[1000px]:z-30 max-[1000px]:max-w-[calc(100vw-2rem)] max-[1000px]:shadow-overlay",
       )}
     >
-      <header className="flex items-center gap-1 border-b px-2 py-2">
-        <div role="tablist" aria-label={`${bot.name}'s details`} className="flex min-w-0 flex-1 gap-0.5">
-          {TABS.map(({ tab: value, label, icon }) => (
-            <Button
-              key={value}
-              type="button"
-              role="tab"
-              variant="ghost"
-              size="sm"
-              aria-selected={tab === value}
-              className="text-muted-foreground aria-selected:bg-accent aria-selected:text-foreground"
-              onClick={() => onTab(value)}
-            >
-              {icon}
-              {label}
-            </Button>
-          ))}
+      <header className="flex items-center gap-2 border-b border-line px-2.5 py-2">
+        {/* Beautiful UI's segmented control. */}
+        <div role="tablist" aria-label={`${bot.name}'s details`} className="flex min-w-0 flex-1">
+          <div className="flex rounded-full bg-field p-0.5">
+            {TABS.map(({ tab: value, label, icon }) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={tab === value}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-medium transition-[background-color,color,box-shadow] duration-150 [&_svg]:size-3.5",
+                  tab === value ? "bg-surface text-ink shadow-btn" : "text-ink-3 hover:text-ink-2",
+                )}
+                onClick={() => onTab(value)}
+              >
+                {icon}
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <Button type="button" variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label="Close the panel" title="Close the panel" onClick={onClose}>
-          <X aria-hidden />
-        </Button>
+        <button
+          type="button"
+          className="primitive-icon-button shrink-0 text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink"
+          aria-label="Close the panel"
+          title="Close the panel"
+          onClick={onClose}
+        >
+          <X className="size-4" aria-hidden />
+        </button>
       </header>
       <div role="tabpanel" className="relative min-h-0 flex-1">
         {tab === "settings" && (
           // The form scrolls its fields itself, so Save stays put below them.
-          <div className="absolute inset-0 flex flex-col">
+          <div className="absolute inset-0 flex flex-col animate-[fade-in_200ms_ease-out_both]">
             {notice && (
-              <p className="border-b bg-attention-soft px-4 py-2.5 text-[13px] text-attention" role="status">
+              <p className="border-b border-line bg-orange-tint px-4 py-2.5 text-[13px] text-orange" role="status">
                 {notice}
               </p>
             )}
@@ -78,7 +88,7 @@ export function BotPanel({ session, bot, tab, onTab, onClose, isUnencrypted, not
           </div>
         )}
         {tab === "routines" && (
-          <div className="absolute inset-0 overflow-y-auto p-4">
+          <div className="absolute inset-0 overflow-y-auto bg-canvas p-3">
             <RoutinesList key={bot.id} list={session.routines(bot.id)} botName={bot.name} />
           </div>
         )}
